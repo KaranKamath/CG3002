@@ -6,4 +6,9 @@ auth.set_access_token('3535282152-vdd0chrSNOYI61xHa3oC62rxwrnZvWUIhZJCy0t', 'yOg
 
 api = tweepy.API(auth)
 
-status = api.update_status(status='My NUS IP is ' + utils.get_IP())
+current_IP = utils.get_IP()
+
+if current_IP != utils.get_last_IP():
+    status = api.update_status(status='My NUS IP is ' + current_IP)
+
+    utils.write_current_IP()
