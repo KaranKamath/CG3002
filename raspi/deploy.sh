@@ -1,4 +1,6 @@
 echo "Deploying..."
-rsync -ru * pi@$1:~/CG3002
+rsync -ru * pi@$1:~/cg3002
 echo "Done."
-ssh pi@$1 'cd ~/CG3002; sudo ./install.sh;'
+if [ "$2" == "-i" ]; then
+    ssh pi@$1 'cd ~/cg3002; sudo ./install.sh;'
+fi
