@@ -41,13 +41,13 @@ char report[80];
 char reportAlti[20];
 char reportGyro[40];
 char reportUltra[20];
+char keypadresult[50];
 
 boolean _readAlti = true;
 boolean _readComp = true;
 boolean _readGyro = true; 
 boolean _readUltra = true;
-
-int interval = 100;
+boolean _readKeypad = true;
 
 void setup()
 {
@@ -132,12 +132,12 @@ void keypadEvent(KeypadEvent key) {
   switch (keypad.getState()){
     case PRESSED:
       switch (key){
-        case '1': _readAlti = not _readAlti; break;
-        case '2': _readComp = not _readComp; break;
-        case '3': _readGyro = not _readGyro; break;
-        case '4': _readUltra = not _readUltra; break;
-        case '*': interval = 1000; break;
-        case '#': interval = 100; break;
+        case '1': if (!_readKeypad) _readAlti = not _readAlti; break;
+        case '2': if (!_readKeypad) _readComp = not _readComp; break;
+        case '3': if (!_readKeypad) _readGyro = not _readGyro; break;
+        case '4': if (!_readKeypad) _readUltra = not _readUltra; break;
+        case '*': if (!_readKeypad) restart(); break;
+        case '#': _readKeypad = true; readKeypad(); break;
         default : Serial.println("read key");
         break;
       }
@@ -153,7 +153,6 @@ void readUltra() {
 }
 void sendReport() {
     boolean _read = true;
-    if(cntFlag==1){
       do {
         strcpy(ackData, "");    
       if (_readAlti)
@@ -172,8 +171,7 @@ void sendReport() {
           Serial1.readBytesUntil(0,ackData,3);
           Serial.println(ackData);
       }  
-     }while(strcmp(ackData,"ACK")!=0 and _read);
-   }  
+     }while(strcmp(ackData,"ACK")!=0 and _read);  
 }
 
 void handshake() {
@@ -201,4 +199,22 @@ void handshake() {
   }
 }
 
+void restart() {
+  strcpy(ack, "");
+  cntFlag = 0;
+  while (cntFlag == 0) {
+    handshake();
+  }
+}
+
+void readKeypad() {
+  int len = keypadresult.length();
+  char c = keypad.getKey();
+  while (c != '#') {
+    keypadresult[len] = c;
+    len++;
+    c = keypad.getKey();
+  }
+    
+}
 
