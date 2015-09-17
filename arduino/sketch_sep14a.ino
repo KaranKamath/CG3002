@@ -163,7 +163,7 @@ void keypadEvent(KeypadEvent key) {
         case '4': _readUltra = not _readUltra; break;
         case '6': _readProx = not _readProx; break;
         case '7': case '8': runMotor(key - '7'); break;
-        case '*': restart(); break;
+        case '*': restartUart(); break;
         case '#': _readKeypad = true; break;
         case '9': _connectUart = not _connectUart; Serial.println("In UART\n"); break;
         default : Serial.println("undefined function");
@@ -235,7 +235,7 @@ void handshake() {
   }
 }
 
-void restart() {
+void restartUart() {
   memset(ack, 0, sizeof(ack));
   cntFlag = 0;
   while (cntFlag == 0 and _connectUart) {
