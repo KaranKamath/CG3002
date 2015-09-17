@@ -10,6 +10,8 @@
 #define MAX_DISTANCE 200
 #import <String.h>
 
+#define PROXPIN 15
+
 char ack[50];
 int cntFlag;
 char ackData[50];
@@ -18,11 +20,13 @@ LPS ps;
 LSM303 compass;
 L3G gyro;
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+float proxVal, proxMm;
 
 const byte IDALTI = 0;
 const byte IDCOMP = 1;
 const byte IDGYRO = 2;
 const byte IDULTRA = 3;
+const byte IDPROX = 4;
 
 const byte ROWS = 4; //four rows
 const byte COLS = 3; //three columns
@@ -42,6 +46,7 @@ char report[80];
 char reportAlti[20];
 char reportGyro[40];
 char reportUltra[20];
+char reportProx[20];
 char keypadresult[50];
 
 boolean _readAlti = false;
@@ -49,6 +54,7 @@ boolean _readComp = false;
 boolean _readGyro = false; 
 boolean _readUltra = false;
 boolean _readKeypad = false;
+boolean _readProx = false;
 boolean _connectUart = false;
 
 void setup()
@@ -92,6 +98,9 @@ void loop()
   }
   if(_readUltra) {
     readUltra();
+  }
+  if (_readProx) {
+    readProx();
   }
   if (_connectUart) {
     sendReport();
@@ -152,7 +161,8 @@ void keypadEvent(KeypadEvent key) {
         case '2': _readComp = not _readComp; break;
         case '3': _readGyro = not _readGyro; break;
         case '4': _readUltra = not _readUltra; break;
-        case '6': case '7': case '8': runMotor(key - '6'); break;
+        case '6': _readProx = not _readProx; break;
+        case '7': case '8': runMotor(key - '7'); break;
         case '*': restart(); break;
         case '#': _readKeypad = true; break;
         case '9': _connectUart = not _connectUart; Serial.println("In UART\n"); break;
@@ -186,6 +196,9 @@ void sendReport() {
         Serial1.write(reportUltra);
       if (_readGyro) {
         Serial1.write(reportGyro);
+      }
+      if (_readProx) {
+        Serial1.write(reportProx);
       }
       delay(100);
       
@@ -257,5 +270,16 @@ void runMotor(int id) {
     digitalWrite(motorPins[id*2+1], 1);
     motorStates[id] = 0;
   }  
+}
+
+void readProx() {
+  proxVal = analogRead(PROXPIN);
+  proxMm = 106500.8 * pow(proxVal,-0.935) - 10;
+  if (_connectUart) 
+    sequence = (sequence++)%1024;
+  Serial.println(proxMm);
+  snprintf(reportProx, sizeof(reportProx), "%d|%d|%d", IDPROX, 
+  proxMm, sequence);
+  Serial.println(reportProx);
 }
 
