@@ -49,11 +49,6 @@ def fetch(since='0', sid=None, raw_data=None):
     c.close()
     conn.close()
 
-    data_to_return = []
-
-    if len(fetched_vals) > 0:
-        for row in fetched_vals:
-            data_row = [row[1], json.loads(row[2])]
-            data_to_return.append(data_row)
+    data_to_return = [[row[1], json.loads(row[2])] for row in fetched_vals]
 
     return data_to_return
