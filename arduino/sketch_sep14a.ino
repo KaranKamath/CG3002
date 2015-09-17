@@ -34,7 +34,8 @@ char keys[ROWS][COLS] = {
         };
 byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {8, 7, 6}; //connect to the column pinouts of the keypad
-
+int motorPins[8] = {42, 43, 44, 45, 46, 47, 48};
+byte motorStates[4] = {0, 0, 0, 0};
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 char report[80];
@@ -43,11 +44,12 @@ char reportGyro[40];
 char reportUltra[20];
 char keypadresult[50];
 
-boolean _readAlti = true;
-boolean _readComp = true;
-boolean _readGyro = true; 
-boolean _readUltra = true;
-boolean _readKeypad = true;
+boolean _readAlti = false;
+boolean _readComp = false;
+boolean _readGyro = false; 
+boolean _readUltra = false;
+boolean _readKeypad = false;
+boolean _connectUart = false;
 
 void setup()
 {
@@ -67,11 +69,13 @@ void setup()
   compass.init();
   compass.enableDefault();
   gyro.enableDefault();
-  strcpy(ack, "");
+  memset(ack, 0, sizeof(ack));
   cntFlag = 0;
-  strcpy(ackData, "");
-  while (cntFlag == 0)
+  memset(ackData, 0, sizeof(ackData));
+  while (cntFlag == 0 and _connectUart)
     handshake();
+  memset(keypadresult, 0, sizeof(keypadresult));
+  setupMotor();
 }
 
 void loop()
@@ -89,35 +93,46 @@ void loop()
   if(_readUltra) {
     readUltra();
   }
-  sendReport();
+  if (_connectUart) {
+    sendReport();
+  }
 }
 
-//NOTE: format of the data sent: can RPi read Ae-3 format
+void setupMotor() {
+  int i = 0;
+  for (i = 0; i < 8; i++) 
+    pinMode(motorPins[i], OUTPUT);
+}
+
 void readAlti() {
     float pressure = ps.readPressureMillibars();
     float altitude = ps.pressureToAltitudeMeters(pressure);
+    if (_connectUart)
+      sequence = (sequence++)%1024;
     snprintf(reportAlti, sizeof(reportAlti), "%d|%d|%d\n", IDALTI, int(altitude*1000), 
-    (++sequence)%1024);
+    sequence);
 
     Serial.println(reportAlti);
     Serial.println(altitude);
 }
 void readComp() {
     compass.read();
-
+    if (_connectUart)
+      sequence = (sequence++)%1024;
     snprintf(report, sizeof(report), "%d|%6d, %6d, %6d, %6d, %6d, %6d|%d\n",
     IDCOMP,
     compass.a.x, compass.a.y, compass.a.z,
     compass.m.x, compass.m.y, compass.m.z,
-    (++sequence)%1024);
+    sequence);
     Serial.println(report);
 
 }
 void readGyro() {
     gyro.read();
-
+    if (_connectUart)
+      sequence = (sequence++)%1024;
     snprintf(reportGyro, sizeof(report), "%d|%d, %d, %d|%d\n", IDGYRO, 
-    gyro.g.x, gyro.g.y, gyro.g.z, (++sequence)%1024);
+    gyro.g.x, gyro.g.y, gyro.g.z, sequence);
     Serial.println(reportGyro);
     Serial.print("G ");
     Serial.print("X: ");
@@ -131,30 +146,38 @@ void readGyro() {
 void keypadEvent(KeypadEvent key) {
   switch (keypad.getState()){
     case PRESSED:
+    if (!_readKeypad) {
       switch (key){
-        case '1': if (!_readKeypad) _readAlti = not _readAlti; break;
-        case '2': if (!_readKeypad) _readComp = not _readComp; break;
-        case '3': if (!_readKeypad) _readGyro = not _readGyro; break;
-        case '4': if (!_readKeypad) _readUltra = not _readUltra; break;
-        case '*': if (!_readKeypad) restart(); break;
-        case '#': _readKeypad = true; readKeypad(); break;
-        default : Serial.println("read key");
+        case '1': _readAlti = not _readAlti; break;
+        case '2': _readComp = not _readComp; break;
+        case '3': _readGyro = not _readGyro; break;
+        case '4': _readUltra = not _readUltra; break;
+        case '6': case '7': case '8': runMotor(key - '6'); break;
+        case '*': restart(); break;
+        case '#': _readKeypad = true; break;
+        case '9': _connectUart = not _connectUart; Serial.println("In UART\n"); break;
+        default : Serial.println("undefined function");
         break;
       }
+    } else {
+      readKeypad(key);
+    }
     break;
   }
 }
 void readUltra() {
   unsigned int uS = sonar.ping();
+  if (_connectUart)
+      sequence = (sequence++)%1024;
   snprintf(reportUltra, sizeof(reportUltra), "%d|%d|%d\n", IDULTRA, uS/US_ROUNDTRIP_CM,
-  (++sequence)%1024);
+  sequence);
   Serial.println(uS/US_ROUNDTRIP_CM);
   Serial.println(reportUltra);
 }
+
 void sendReport() {
-    boolean _read = true;
       do {
-        strcpy(ackData, "");    
+        memset(ackData, 0, sizeof(ackData));    
       if (_readAlti)
         Serial1.write(reportAlti);
       if (_readComp)
@@ -165,31 +188,31 @@ void sendReport() {
         Serial1.write(reportGyro);
       }
       delay(100);
-      _read = _readAlti || _readComp || _readUltra || _readGyro;
+      
       int numRecieved = Serial1.available();
-      if(numRecieved>0){
-          Serial1.readBytesUntil(0,ackData,3);
+      if (numRecieved > 0){
+          Serial1.readBytesUntil(0, ackData, 3);
           Serial.println(ackData);
       }  
-     }while(strcmp(ackData,"ACK")!=0 and _read);  
+     } while(strcmp(ackData,"ACK")!=0 and _connectUart);  
 }
 
 void handshake() {
-  if(strcmp(ack,"ACK")!=0){
-    char handshake[50];
+  if (strcmp(ack,"ACK")!= 0) {
+    char handshake[10];
     strcpy(handshake, "BEGIN\n");
     Serial1.write(handshake);
     delay(200);
     int numRecieved = Serial1.available();
-    if(numRecieved>0){
+    if(numRecieved > 0){
       Serial1.readBytesUntil(0,ack,3);
     }
     Serial.write(ack);    
-  }else{
+  } else {
     //echo ACK
-    if(cntFlag==0){
+    if (cntFlag == 0) {
        Serial.write(ack);
-       char ackSend[50];
+       char ackSend[5];
        strcpy(ackSend, "ACK\n");      
        Serial1.write(ackSend);
        cntFlag++;
@@ -200,21 +223,39 @@ void handshake() {
 }
 
 void restart() {
-  strcpy(ack, "");
+  memset(ack, 0, sizeof(ack));
   cntFlag = 0;
-  while (cntFlag == 0) {
+  while (cntFlag == 0 and _connectUart) {
     handshake();
   }
 }
 
-void readKeypad() {
-  int len = keypadresult.length();
-  char c = keypad.getKey();
-  while (c != '#') {
-    keypadresult[len] = c;
-    len++;
-    c = keypad.getKey();
-  }
+void readKeypad(char key) {
+  int len = strlen(keypadresult);    
+  keypadresult[len] = key;
+  Serial.println(len);
+  if (key == '#') {  
     
+    Serial.println(keypadresult);
+    _readKeypad = false;  
+    if (_connectUart) {
+      len++;
+      keypadresult[len] = '\n';
+      Serial1.write(keypadresult);
+    }
+    memset(keypadresult, 0, sizeof(keypadresult));
+  }
+}
+
+void runMotor(int id) {
+  if (motorStates[id] == 0) {
+    digitalWrite(motorPins[id*2], 0);
+    digitalWrite(motorPins[id*2+1], 1);
+    motorStates[id] = 1;
+  } else {
+    digitalWrite(motorPins[id*2], 1);
+    digitalWrite(motorPins[id*2+1], 1);
+    motorStates[id] = 0;
+  }  
 }
 
