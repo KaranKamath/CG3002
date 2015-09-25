@@ -1,6 +1,11 @@
 echo "Deploying..."
-rsync -r --delete * pi@$1:~/cg3002
+rsync -r --delete ../raspi/ pi@$1:~/cg3002/
 echo "Done."
-if [ "$2" == "-i" ]; then
-    ssh pi@$1 'cd ~/cg3002; sudo ./install.sh;'
+
+COMMAND="cd ~/cg3002;"
+if [ "$2" == "--install-prereqs" ]; then
+    COMMAND+="sudo ./install_prereqs.sh;"
 fi
+COMMAND+="sudo ./install.sh;"
+
+ssh pi@$1 "$COMMAND"

@@ -416,7 +416,7 @@ static void prvSetupTimerInterrupt( void )
 {
 	TCCR2A=0b00000010;
 	TCNT2=0;
-	OCR2A=configTICK_RATE_HZ * configCPU_CLOCK_HZ / 64000000;
+	OCR2A=configCPU_CLOCK_HZ / (64*configTICK_RATE_HZ) - 1;
 	TIMSK2|=0b10;
 	TCCR2B=0b00000110;
 }

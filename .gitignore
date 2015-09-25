@@ -1,4 +1,5 @@
+.DS_Store
+stuff/
 *.pyc
 *.swp
 *.db
-raspi/Twitter/ip.txt

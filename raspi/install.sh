@@ -1,4 +1,5 @@
-echo "Installing...\n";
-sudo apt-get install build-essential libssl-dev libffi-dev python-dev;
-sudo pip install -r requirements.txt;
-echo "Done.";
+echo "Installing..."
+sudo service uart stop
+sudo cp uart.sh /etc/init.d/uart.sh
+sudo chmod +x /etc/init.d/uart.sh
+echo "Done"
