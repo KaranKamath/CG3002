@@ -6,7 +6,7 @@ import sys
 import time
 import serial
 
-LOG_FILENAME = 'uart.log'
+LOG_FILENAME = '/home/pi/logs/uart.log'
 LOG_LEVEL = logging.INFO
 
 parser = argparse.ArgumentParser(description="Uart service")
