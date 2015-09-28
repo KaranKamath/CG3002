@@ -21,6 +21,12 @@ void sendData(void *p) {
 				Serial.print(toSend);
 			} else if (received.id == IDALTI) {
 				Serial.println("OK");
+			} else if (received.id == IDACCMAG) {
+				snprintf(toSend, sizeof(toSend), "%d|%d,%d,%d,%d,%d,%d|%d\n", IDACCMAG,
+				received.data[0], received.data[1], received.data[2],
+				received.data[3], received.data[4], received.data[5],
+				0);
+				Serial.print(toSend);
 			}
 		}
 	}
