@@ -66,7 +66,7 @@ void task1(void *p)
 
 		dprintf("Distance:%d cm",distance);
 
-		vTaskDelay(2000);
+		vTaskDelay(500);
 	}
 }
 

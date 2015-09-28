@@ -49,9 +49,9 @@ char reportUltra[20];
 char reportProx[20];
 char keypadresult[50];
 
-boolean _readAlti = false;
-boolean _readComp = false;
-boolean _readGyro = false; 
+boolean _readAlti = true;
+boolean _readComp = true;
+boolean _readGyro = true; 
 boolean _readUltra = false;
 boolean _readKeypad = false;
 boolean _readProx = false;
@@ -105,6 +105,7 @@ void loop()
   if (_connectUart) {
     sendReport();
   }
+  delay(200);
 }
 
 void setupMotor() {
@@ -122,7 +123,6 @@ void readAlti() {
     sequence);
 
     Serial.println(reportAlti);
-    Serial.println(altitude);
 }
 void readComp() {
     compass.read();
@@ -143,13 +143,6 @@ void readGyro() {
     snprintf(reportGyro, sizeof(report), "%d|%d, %d, %d|%d\n", IDGYRO, 
     gyro.g.x, gyro.g.y, gyro.g.z, sequence);
     Serial.println(reportGyro);
-    Serial.print("G ");
-    Serial.print("X: ");
-    Serial.print(gyro.g.x);
-    Serial.print(" Y: ");
-    Serial.print((int)gyro.g.y);
-    Serial.print(" Z: ");
-    Serial.println((int)gyro.g.z);
 }
 
 void keypadEvent(KeypadEvent key) {
