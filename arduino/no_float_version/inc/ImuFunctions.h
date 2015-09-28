@@ -15,16 +15,16 @@
 #include "L3G.h"
 #include "LSM303.h"
 
-typedef struct {
-	LPS ps;
-	xQueueHandle queue;
-	} para_ps_t;
-
+extern LPS ps;
 extern L3G gyro;
+extern LSM303 accmag;
 extern xQueueHandle report;
 	
 void altitude(void *p);
-void accemagno (void *p);
-void accemagno_init(void) ;
+void altitude_init();
+void gyroreader(void *p);
+void gyro_init(void);
+void accemagno(void *p);
+void accemagno_init(void);
 
 #endif /* IMUFUNCTIONS_H_ */

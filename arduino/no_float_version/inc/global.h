@@ -21,6 +21,7 @@
 
 #define QUEUE_SIZE 10
 #define MAX_NUM_DATA 6
+#define DELAY_IMU 500
 
 #define IDALTI 0
 #define IDACCMAG 1

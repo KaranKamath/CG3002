@@ -13,9 +13,11 @@ void setup(void) {
 	Serial.begin(9600);
 	pinMode(32, OUTPUT);
 	pinMode(13, OUTPUT);
-	ps.init();
-	ps.enableDefault();
+	
+	altitude_init();
 	accemagno_init();
+	gyro_init();
+	
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t));
 }
 
@@ -24,15 +26,10 @@ int main(void)
 	
 	init();
 	setup();
-	
-	para_ps_t *paraPs=new para_ps_t;
-	paraPs->ps = ps;
-	paraPs->queue = report;
-	
-	
     
-	xTaskCreate(altitude, "Altitude", 512, (void *)paraPs, 2, NULL);
+	xTaskCreate(altitude, "Altitude", 512, NULL, 2, NULL);
 //	xTaskCreate(accemagno, "Acc and Mag", 512, NULL, 1, NULL);
+//	xTaskCreate(gyroreader, "Gyroscope", 512, NULL, 2, NULL);
 	xTaskCreate(sendData, "Send Data", 1024, NULL, 3, NULL);
 	vTaskStartScheduler();
 }
