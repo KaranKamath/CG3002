@@ -49,9 +49,9 @@ char reportUltra[20];
 char reportProx[20];
 char keypadresult[50];
 
-boolean _readAlti = false;
-boolean _readComp = false;
-boolean _readGyro = false; 
+boolean _readAlti = true;
+boolean _readComp = true;
+boolean _readGyro = true; 
 boolean _readUltra = false;
 boolean _readKeypad = false;
 boolean _readProx = false;
@@ -60,7 +60,7 @@ boolean _connectUart = false;
 void setup()
 {
   Serial.begin(9600);
-  Serial1.begin(115200);
+  Serial1.begin(9600);
   
   Wire.begin();
   sequence = 0;
@@ -122,7 +122,7 @@ void readAlti() {
     sequence);
 
     Serial.println(reportAlti);
-    Serial.println(altitude);
+    //Serial.println(altitude);
 }
 void readComp() {
     compass.read();
@@ -143,13 +143,13 @@ void readGyro() {
     snprintf(reportGyro, sizeof(report), "%d|%d, %d, %d|%d\n", IDGYRO, 
     gyro.g.x, gyro.g.y, gyro.g.z, sequence);
     Serial.println(reportGyro);
-    Serial.print("G ");
-    Serial.print("X: ");
-    Serial.print(gyro.g.x);
-    Serial.print(" Y: ");
-    Serial.print((int)gyro.g.y);
-    Serial.print(" Z: ");
-    Serial.println((int)gyro.g.z);
+    //Serial.print("G ");
+    //Serial.print("X: ");
+    //Serial.print(gyro.g.x);
+    //Serial.print(" Y: ");
+    //Serial.print((int)gyro.g.y);
+    //Serial.print(" Z: ");
+    //Serial.println((int)gyro.g.z);
 }
 
 void keypadEvent(KeypadEvent key) {
