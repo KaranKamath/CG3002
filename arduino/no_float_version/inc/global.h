@@ -11,9 +11,8 @@
 
 #include <avr/io.h>
 #include <FreeRTOS.h>
-
-#include <Arduino.h>
 #include <semphr.h>
+#include <Arduino.h>
 #include <task.h>
 #include <stdio.h>
 #include "Wire.h"
@@ -22,6 +21,7 @@
 #define QUEUE_SIZE 10
 #define MAX_NUM_DATA 6
 #define DELAY_IMU 500
+#define STACK_DEPTH 256
 
 #define IDALTI 0
 #define IDACCMAG 1

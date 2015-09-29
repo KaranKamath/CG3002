@@ -14,7 +14,6 @@ xSemaphoreHandle i2c_bus = 0;
 void imu(void *p) {
 	data_t dataRead;
 	byte i = 0;
-	byte j = 0;
 	while (1) {
 		altitude(&dataRead);
 		byte res = xQueueSendToBack(report, &dataRead, 500);
@@ -39,12 +38,7 @@ void imu(void *p) {
 void altitude(data_t *psData) {
 	psData->id = IDALTI;
 	float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
-//	psData.data[0] = floor(alti*1000+0.5);
-	if (alti > 0) {
-		psData->data[0] = 0;
-	} else {
-		psData->data[0] = 1;
-	}
+	psData->data[0] = floor(alti*1000+0.5);
 }
 			
 
