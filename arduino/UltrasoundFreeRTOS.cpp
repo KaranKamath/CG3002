@@ -66,11 +66,9 @@ void task1(void *p)
 
 		dprintf("Distance:%d cm",distance);
 
-		vTaskDelay(2000);
+		vTaskDelay(500);
 	}
 }
-
-
 
 #define STACK_DEPTH 512
 
@@ -88,6 +86,7 @@ int main(void)
 		
 	//Create tasks
 	xTaskCreate(task1,"Task 1",STACK_DEPTH,NULL,1,NULL);
+	//xTaskCreate(task1,"Task 2",STACK_DEPTH,NULL,1,NULL);
 
 	vTaskStartScheduler();	
 }
