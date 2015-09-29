@@ -19,12 +19,13 @@ extern LPS ps;
 extern L3G gyro;
 extern LSM303 accmag;
 extern xQueueHandle report;
-	
-void altitude(void *p);
+
+void imu(void *p);	
+void altitude(data_t *psData);
 void altitude_init();
-void gyroreader(void *p);
+void gyroreader(data_t *gyroData);
 void gyro_init(void);
-void accemagno(void *p);
+void accemagno(data_t *accmaData);
 void accemagno_init(void);
 
 #endif /* IMUFUNCTIONS_H_ */

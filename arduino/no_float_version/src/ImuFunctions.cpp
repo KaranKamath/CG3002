@@ -11,55 +11,54 @@
 
 xSemaphoreHandle i2c_bus = 0;
 
-// Pressure Raw is an integer. Is it possible to have Pi deal with converting it to meters/millimeters? Formula available.
-void altitude(void *p) {
-	byte i= 0;
-
-	data_t psData;
-	
-	psData.id = IDALTI;
+void imu(void *p) {
+	data_t dataRead;
+	byte i = 0;
+	byte j = 0;
 	while (1) {
-		if (xSemaphoreTake(i2c_bus, 1000)) {
-			float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
-//			psData->data[0] = floor(alti*1000+0.5);
-			psData.data[0] = 0;
-			if (i == 0) {
-				digitalWrite(32, HIGH);
-			} else {
-				digitalWrite(32, LOW);
-			}
-			byte res = xQueueSendToBack(report, &psData, 500);
-			if (res) {
-				i = (i+1)%2;
-			} else {
-				i = (i-1)%2;
-			}
-			xSemaphoreGive(i2c_bus);
-		} else {
-			digitalWrite(13, HIGH);
+		altitude(&dataRead);
+		byte res = xQueueSendToBack(report, &dataRead, 500);
+		if (res) {
+			i = (i+1)%2;
 		}
+		if (i==0) {
+			digitalWrite(32, HIGH);
+		} else {
+			digitalWrite(32, LOW);
+		}
+		gyroreader(&dataRead);
+		xQueueSendToBack(report, &dataRead, 500);
+		
+		accemagno(&dataRead);
+		xQueueSendToBack(report, &dataRead, 500);
+		
 		vTaskDelay(DELAY_IMU);
 	}
 }
+// Pressure Raw is an integer. Is it possible to have Pi deal with converting it to meters/millimeters? Formula available.
+void altitude(data_t *psData) {
+	psData->id = IDALTI;
+	float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
+//	psData.data[0] = floor(alti*1000+0.5);
+	if (alti > 0) {
+		psData->data[0] = 0;
+	} else {
+		psData->data[0] = 1;
+	}
+}
+			
 
 void altitude_init() {
 	ps.init();
 	ps.enableDefault();
 }
 
-void gyroreader (void *p) {
-	data_t amData;
-	amData.id = IDGYRO;
-	while (1) {
-		if (xSemaphoreTake(i2c_bus, 1000)) {
-			amData.data[0] = gyro.g.x;
-			amData.data[1] = gyro.g.y;
-			amData.data[2] = gyro.g.z;
-			xQueueSendToBack(report, &amData, 500);
-			xSemaphoreGive(i2c_bus);
-		}
-		vTaskDelay(DELAY_IMU);
-	}
+void gyroreader (data_t *gyroData) {
+	gyro.read();
+	gyroData->id = IDGYRO;
+	gyroData->data[0] = gyro.g.x;
+	gyroData->data[1] = gyro.g.y;
+	gyroData->data[2] = gyro.g.z;
 }
 
 void gyro_init(void) {
@@ -67,22 +66,15 @@ void gyro_init(void) {
 	gyro.enableDefault();
 }
 
-void accemagno(void *p) {
-	data_t accmaData;
-	accmaData.id = IDACCMAG;
-	while (1) {
-		if (xSemaphoreTake(i2c_bus, 1000)) {
-			accmaData.data[0] = accmag.a.x;
-			accmaData.data[1] = accmag.a.y;
-			accmaData.data[2] = accmag.a.z;
-			accmaData.data[3] = accmag.m.x;
-			accmaData.data[4] = accmag.m.y;
-			accmaData.data[5] = accmag.m.z;
-			xQueueSendToBack(report, &accmaData, 500);
-			xSemaphoreGive(i2c_bus);
-		}
-		vTaskDelay(DELAY_IMU);
-	}
+void accemagno(data_t *accmaData) {
+	accmag.read();
+	accmaData->id = IDACCMAG;
+	accmaData->data[0] = accmag.a.x;
+	accmaData->data[1] = accmag.a.y;
+	accmaData->data[2] = accmag.a.z;
+	accmaData->data[3] = accmag.m.x;
+	accmaData->data[4] = accmag.m.y;
+	accmaData->data[5] = accmag.m.z;
 }
 
 void accemagno_init(void) {
