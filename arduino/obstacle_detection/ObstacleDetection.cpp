@@ -19,14 +19,16 @@
 #define MAX_DISTANCE 200
 #define ITERATIONS 5
 #define OBSTACLE_THRESHOLD 80
+#define MAX_PWM_VOLTAGE 127
 
 #define sensorIR 15
 
 /* Global Variables */
-int motor1Pins[2] = {42, 43};
+int motor1Pins[2] = {4, 5};
 bool runMotor1 = false;
-int motor2Pins[2] = {44, 45};
+int motor2Pins[2] = {7, 6};
 bool runMotor2 = false;
+
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
@@ -92,7 +94,7 @@ void readDistanceSensors(void *p)
 		infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
 		//infraDist = 4192.936 * pow(sensorValue,-0.935) - 3.937;
 		
-		if(((0<infraDist) && (infraDist<OBSTACLE_THRESHOLD))){
+		if(((20<infraDist) && (infraDist<OBSTACLE_THRESHOLD))){
 			dprintf("INFRARED OBSTACLE DETECTED ! At Distance:%d inches",(int)infraDist);
 			//Start Actuator Task
 			runMotor2 = true;
@@ -112,7 +114,7 @@ void driveActuators(void* pvParameters)
 
 		if (runMotor1) {
 			/* Turn Motor On */
-			digitalWrite(motor1Pins[1], HIGH);
+			analogWrite(motor1Pins[1], MAX_PWM_VOLTAGE);
 			digitalWrite(motor1Pins[0], LOW);
 			} else {
 			/* Turn Motor Off */
@@ -123,7 +125,7 @@ void driveActuators(void* pvParameters)
 		
 		if (runMotor2) {
 			/* Turn Motor On */
-			digitalWrite(motor2Pins[1], HIGH);
+			digitalWrite(motor2Pins[1], MAX_PWM_VOLTAGE);
 			digitalWrite(motor2Pins[0], LOW);
 			} else {
 			/* Turn Motor Off */
