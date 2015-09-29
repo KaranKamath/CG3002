@@ -70,8 +70,6 @@ void task1(void *p)
 	}
 }
 
-
-
 #define STACK_DEPTH 512
 
 void vApplicationIdleHook()
@@ -88,6 +86,7 @@ int main(void)
 		
 	//Create tasks
 	xTaskCreate(task1,"Task 1",STACK_DEPTH,NULL,1,NULL);
+	//xTaskCreate(task1,"Task 2",STACK_DEPTH,NULL,1,NULL);
 
 	vTaskStartScheduler();	
 }
