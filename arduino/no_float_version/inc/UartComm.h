@@ -13,6 +13,7 @@
 #include "debugging.h"
 extern xQueueHandle report;
 void setupUart();
+boolean handshake(void);
 void sendData(void *p);
 
 #endif /* UARTCOMM_H_ */

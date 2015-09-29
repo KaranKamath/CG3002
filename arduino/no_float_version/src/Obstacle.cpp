@@ -8,6 +8,7 @@
 #include "Obstacle.h"
 #include "debugging.h"
 
+//TODO: change to array of actuators
 const byte motor1Pins[2] = {4, 5};
 bool runMotor1 = false;
 const byte motor2Pins[2] = {7, 6};
@@ -42,7 +43,6 @@ void readDistanceSensors(void *p)
 	{
 		usecs = sonar.ping_median(ITERATIONS);
 		distance = sonar.convert_cm(usecs);
-		dprintf("Usec: %d\n", usecs);
 		runMotor1 = false;
 		runMotor2 = false;
 		
