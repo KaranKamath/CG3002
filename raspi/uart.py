@@ -6,7 +6,7 @@ import sys
 import time
 import serial
 
-LOG_FILENAME = 'uart.log'
+LOG_FILENAME = '/home/pi/logs/uart.log'
 LOG_LEVEL = logging.INFO
 
 parser = argparse.ArgumentParser(description="Uart service")
@@ -21,7 +21,7 @@ logger.setLevel(LOG_LEVEL)
 handler = logging.handlers.TimedRotatingFileHandler(
     LOG_FILENAME, when='midnight', backupCount=3)
 handler.setFormatter(logging.Formatter(
-    '%(ascitime)s %(levelname)-8s %(message)s'))
+    '%(asctime)s %(levelname)-8s %(message)s'))
 logger.addHandler(handler)
 
 
@@ -42,21 +42,15 @@ sys.stderr = UartLogger(logger, logging.ERROR)
 class UartHandler():
 
     def __init__(self, logger):
-        print "FSGDFG"
         self.ser = serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
         self.logger = logger
 
         self.logger.info('Opening serial line')
-        self.ser.open()
         self._perform_handshake()
         self._stream_data()
 
     def _serial_read_line(self):
         return self.ser.readline().strip()
-
-    def _perform_handshake(self):
-        self._wait_for_begin()
-        self._sync_acks()
 
     def _wait_for_begin(self):
         while True:
@@ -77,31 +71,42 @@ class UartHandler():
             else:
                 self.logger.info('Waiting for ACK')
 
-    def _stream_data(self):
-        try:
-            while True:
-                data = self._serial_read_line()
-                if data:
-                    self._parse_data(data)
-                    self.ser.write('ACK')
-        except KeyboardInterrupt:
-            self.ser.close()
-
     def _parse_data(self, raw_data):
         data_components = raw_data.split('|')
         if len(data_components) == 3:
             device_id = data_components[0]
             data = [d.strip() for d in data_components[1].split(',')]
             seq_id = data_components[2]
+            return (device_id, data, seq_id)
+        return (None, None, None)
 
+    def _store_data(self, device_id, data, seq_id):
+        if device_id and data and seq_id:
             logging.info('Received data '
                          '[device_id: %s, data: %s, seq_id: %s]',
                          device_id, data, seq_id)
-            self._store_data(device_id, data, seq_id)
 
-    def _store_data(self, device_id, data, seq_id):
-        pass
+    def close(self):
+        self.ser.close()
+
+    def perform_handshake(self):
+        self._wait_for_begin()
+        self._sync_acks()
+
+    def stream_data(self):
+        while True:
+            data = self._serial_read_line()
+            if data:
+                (dev_id, data, seq_id) = self._parse_data(data)
+                self._store_data(dev_id, data, seq_id)
+                self.ser.write('ACK')
 
 
-#uart = UartHandler(logger)
+uart = UartHandler(logger)
+
+try:
+    uart.perform_handshake()
+    uart.stream_data()
+except KeyboardInterrupt:
+    uart.close()
 

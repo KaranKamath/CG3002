@@ -25,15 +25,27 @@ class DirectionsGenerator(object):
             heading += 360
         return heading
 
+    def _calc_distance(self, x1, y1, x2, y2):
+        return sqrt((x1-x2) ** 2 + (y1-y2) ** 2)
+
     def get_directions(self, x, y, heading):
-        x_diff = self.graph[self.next_node]['x'] - x
-        y_diff = self.graph[self.next_node]['y'] - y
+        min_dist_node = path[0]
+        min_dist = self._calc_distance(x, y, self.graph[path[0]]['x'],
+                                       self.graph[path[0]]['y'])
+        for node in path:
+            dist = self._calc_distance(x, y, self.graph[node]['x'],
+                                       self.graph[node]['y'])
+            if dist < min_dist:
+                min_dist = dist
+                min_dist_node = node
+
+        x_diff = self.graph[min_dist_node]['x'] - x
+        y_diff = self.graph[min_dist_node]['y'] - y
 
         if x_diff == 0 and y_diff == 0:
-            self.next_node_idx += 1
-            if self.next_node_idx == len(self.next_node):
-                return (None, None)
-            return self.get_directions(x, y, heading)
+            min_dist_node = path[path.index(min_dist_node) + 1]
+            x_diff = self.graph[min_dist_node]['x'] - x
+            y_diff = self.graph[min_dist_node]['y'] - y
 
         heading = self._convert_heading_from_map(heading)
         turn_to_angle = heading - degrees(atan2(y_diff, x_diff))
