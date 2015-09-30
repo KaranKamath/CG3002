@@ -1,4 +1,5 @@
 from math import atan2, degrees, sqrt
+from utils import euclidean_distance as distance
 
 
 class DirectionsGenerator(object):
@@ -25,16 +26,13 @@ class DirectionsGenerator(object):
             heading += 360
         return heading
 
-    def _calc_distance(self, x1, y1, x2, y2):
-        return sqrt((x1-x2) ** 2 + (y1-y2) ** 2)
-
     def get_directions(self, x, y, heading):
         min_dist_node = path[0]
-        min_dist = self._calc_distance(x, y, self.graph[path[0]]['x'],
-                                       self.graph[path[0]]['y'])
+        min_dist = distance(x, y, self.graph[path[0]]['x'],
+                            self.graph[path[0]]['y'])
         for node in path:
-            dist = self._calc_distance(x, y, self.graph[node]['x'],
-                                       self.graph[node]['y'])
+            dist = distance(x, y, self.graph[node]['x'],
+                            self.graph[node]['y'])
             if dist < min_dist:
                 min_dist = dist
                 min_dist_node = node

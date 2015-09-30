@@ -1,9 +1,6 @@
 from math import sqrt
 from pq import PriorityQueue
-
-
-def calc_distance(x1, y1, x2, y2):
-    return sqrt((int(x1) - int(x2)) ** 2 + (int(y1) - int(y2)) ** 2)
+from utils import euclidean_distance as distance
 
 
 def run_dijkstra(graph, source, target):
@@ -26,8 +23,8 @@ def run_dijkstra(graph, source, target):
 
         for v in u_node['linkTo']:
             if queue.is_node_in_queue(v):
-                alt = dist[u] + calc_distance(u_node['x'], u_node['y'],
-                                              graph[v]['x'], graph[v]['y'])
+                alt = dist[u] + distance(u_node['x'], u_node['y'],
+                                         graph[v]['x'], graph[v]['y'])
                 if alt < dist[v]:
                     dist[v] = alt
                     prev[v] = u
@@ -56,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('end', help='end node')
 
     args = parser.parse_args()
-    
+
     def find_path(building, level, start_node, end_node):
         graph = fetch_map(building, level)
         return run_dijkstra(graph, start_node, end_node)
