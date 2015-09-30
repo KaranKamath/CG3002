@@ -5,6 +5,7 @@ import argparse
 import sys
 import time
 import serial
+from Database.db import DB
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
 LOG_LEVEL = logging.INFO
@@ -44,10 +45,8 @@ class UartHandler():
     def __init__(self, logger):
         self.ser = serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
         self.logger = logger
-
+        self.db = DB()
         self.logger.info('Opening serial line')
-        self._perform_handshake()
-        self._stream_data()
 
     def _serial_read_line(self):
         return self.ser.readline().strip()
@@ -85,6 +84,7 @@ class UartHandler():
             logging.info('Received data '
                          '[device_id: %s, data: %s, seq_id: %s]',
                          device_id, data, seq_id)
+            self.db.insert(device_id, data)
 
     def close(self):
         self.ser.close()
