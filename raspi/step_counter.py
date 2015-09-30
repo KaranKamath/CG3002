@@ -67,3 +67,10 @@ class StepCounter(object):
 
         self.step_state = step_states[-1]
 
+if __name__ == "__main__":
+    sc = StepCounter()
+    while True:
+        sc.update_count()
+        print 'Steps (Cumulative): ', sc.get_count()
+        print 'Current State (0, 1, 2): ', sc.step_state
+        time.sleep(2)
