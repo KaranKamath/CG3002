@@ -33,3 +33,12 @@ def heading(a, m, f):
 
     heading = atan2(vector_dot(e, f), vector_dot(n, f)) * 180 / pi
     return (heading + 360) if heading < 0 else heading
+    
+if __name__ == '__main__':
+    import time
+    from Database.db import DB
+    foo = DB()
+    current = int(round(time.time() * 1000))
+    foo.fetch()
+    
+

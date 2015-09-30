@@ -5,6 +5,7 @@ import argparse
 import sys
 import time
 import serial
+
 from Database.db import DB
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
@@ -74,16 +75,16 @@ class UartHandler():
         data_components = raw_data.split('|')
         if len(data_components) == 3:
             device_id = data_components[0]
-            data = [d.strip() for d in data_components[1].split(',')]
+            data = [int(d.strip()) for d in data_components[1].split(',')]
             seq_id = data_components[2]
             return (device_id, data, seq_id)
         return (None, None, None)
 
     def _store_data(self, device_id, data, seq_id):
         if device_id and data and seq_id:
-            logging.info('Received data '
-                         '[device_id: %s, data: %s, seq_id: %s]',
-                         device_id, data, seq_id)
+            self.logger.info('Stored data '
+                             '[device_id: %s, data: %s, seq_id: %s]',
+                             device_id, data, seq_id)
             self.db.insert(device_id, data)
 
     def close(self):
@@ -92,10 +93,13 @@ class UartHandler():
     def perform_handshake(self):
         self._wait_for_begin()
         self._sync_acks()
+        self.logger.info('Handshake done...')
 
     def stream_data(self):
+        self.logger.info('Streaming data...')
         while True:
             data = self._serial_read_line()
+            self.logger.info('Received data: %s', data)
             if data:
                 (dev_id, data, seq_id) = self._parse_data(data)
                 self._store_data(dev_id, data, seq_id)
