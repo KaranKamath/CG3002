@@ -1,9 +1,15 @@
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 from enum import Enum
 from Database.db import DB
 
-THRESHOLD = 6888
+THRESHOLD = 6100
+
+plt.axis([0, 1000, 0, 1])
+plt.ion()
+plt.show()
+count = 0
 
 
 def now():
@@ -71,10 +77,16 @@ class StepCounter(object):
             print "no value"
             return
 
+        for i in fetched_values:
+            plt.scatter(i, count)
+            plt.draw()
+            count += 1
+            time.sleep(0.05)
+
         fetched_values = self.movingaverage(fetched_values, 3)
+        fetched_values = fetched_values[2:-2]
         print fetched_values
 
-        fetched_values = moving_
         self.last_ts = fetched_data[-1][0]
 
         step_states = self.get_step_states(fetched_values)
