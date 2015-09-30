@@ -1,4 +1,5 @@
 import time
+import numpy as np
 from enum import Enum
 from Database.db import DB
 
@@ -49,16 +50,23 @@ class StepCounter(object):
 
     def get_step_states(self, average_vals):
         return map(lambda x: get_state_for_num(x), average_vals)
-            
+ 
+    def movingaverage(self, interval, window_size):
+        window = np.ones(int(window_size))/float(window_size)
+        return np.convolve(interval, window)
+
     def update_count(self):
         fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
         fetched_values = [ (datapoint[2][0] + datapoint[2][1] + datapoint[2][2]) * 1.0 / 3.0 \
                             for datapoint in fetched_data]
-
+        
         if len(fetched_values) < 1:
             return
 
+        fetched_values = self.movingaverage(fetched_values, 3)
+
+        fetched_values = moving_
         self.last_ts = fetched_data[-1][0]
 
         step_states = self.get_step_states(fetched_values)
@@ -73,4 +81,4 @@ if __name__ == "__main__":
         sc.update_count()
         print 'Steps (Cumulative): ', sc.get_count()
         print 'Current State (0, 1, 2): ', sc.step_state
-        time.sleep(2)
+        time.sleep(5)
