@@ -59,6 +59,8 @@ class StepCounter(object):
         if len(fetched_values) < 1:
             return
 
+        self.last_ts = fetched_data[-1][0]
+
         step_states = self.get_step_states(fetched_values)
 
         self.count = self.count + self.calculate_steps(step_states)
