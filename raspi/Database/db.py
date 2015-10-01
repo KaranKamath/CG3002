@@ -18,6 +18,7 @@ class DB(object):
                                 sensor_id INTEGER,
                                 sensor_data TEXT)
             """)
+            self.conn.execute("pragma journal_mode=wal")
 
     def execute_with_timeout(self, query, params):
         counter = 0

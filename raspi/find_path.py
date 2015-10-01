@@ -42,7 +42,7 @@ def run_dijkstra(graph, source, target):
 
 if __name__ == '__main__':
     import argparse
-    from fetch_map import fetch_map
+    from maps_repo import MapsRepo
 
     parser = argparse.ArgumentParser(
         description='Get path from start to end node for building and level'
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     def find_path(building, level, start_node, end_node):
-        graph = fetch_map(building, level)
+        m = MapsRepo()
+        graph = m.map(building, level)
         return run_dijkstra(graph, start_node, end_node)
 
     print find_path(args.building, args.level, args.start, args.end)
