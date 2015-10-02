@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 
 
@@ -6,6 +7,7 @@ class MapsRepo(object):
 
     MAP_URL = 'http://showmyway.comp.nus.edu.sg/getMapInfo.php?'\
               'Building={building}&Level={level}'
+    SPLIT_RE = re.compile('\s*,\s*')
 
     def __init__(self):
         self._maps = {}
@@ -44,7 +46,7 @@ class MapsRepo(object):
         graph = {}
         for node in raw_map['map']:
             graph[node['nodeId']] = {
-                'linkTo': node['linkTo'].strip().split(', '),
+                'linkTo': self.SPLIT_RE.split(node['linkTo'].strip()),
                 'x': int(node['x']),
                 'y': int(node['y']),
                 'name': node['nodeName']

@@ -29,10 +29,10 @@ class DirectionsGenerator(object):
     def get_directions(self, x, y, heading):
         min_dist_node = path[0]
         min_dist = euclidean_distance(x, y, self.graph[path[0]]['x'],
-                            self.graph[path[0]]['y'])
+                                      self.graph[path[0]]['y'])
         for node in path:
             dist = euclidean_distance(x, y, self.graph[node]['x'],
-                            self.graph[node]['y'])
+                                      self.graph[node]['y'])
             if dist < min_dist:
                 min_dist = dist
                 min_dist_node = node

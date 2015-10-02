@@ -107,10 +107,8 @@ class UartHandler():
 
 
 uart = UartHandler(logger)
-
 try:
     uart.perform_handshake()
     uart.stream_data()
 except KeyboardInterrupt:
     uart.close()
-
