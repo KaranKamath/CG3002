@@ -1,7 +1,10 @@
 import sys
+import time
+from db import DB
 
-lts = sys.argv[1]
+sid = sys.argv[1]
+lts = sys.argv[2] if len(sys.argv) >= 3 else int(round(time.time() * 1000))
+foo = DB()
 
-from database.db import DB
-
-print (db.fetch(sid=1, since=lts))[2][0]
+for entry in foo.fetch(sid=sid, since=lts):
+    print entry[2]

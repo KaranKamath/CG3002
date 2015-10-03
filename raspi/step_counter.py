@@ -2,7 +2,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from enum import Enum
-from Database.db import DB
+from db import DB
 
 THRESHOLD = 6100
 

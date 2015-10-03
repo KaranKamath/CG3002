@@ -6,7 +6,7 @@ import sys
 import time
 import serial
 
-from Database.db import DB
+from db import DB
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
 LOG_LEVEL = logging.INFO

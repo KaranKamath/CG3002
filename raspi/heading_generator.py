@@ -54,7 +54,7 @@ def calibrate(db):
 
 if __name__ == '__main__':
     import time
-    from Database.db import DB
+    from db import DB
     foo = DB()
     # calibrate(foo)
     current = int(time.time()*1000)

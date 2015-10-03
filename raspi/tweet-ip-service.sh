@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          uart
+# Provides:          tweet-ip
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -8,9 +8,9 @@
 # Short-Description: UART service to talk to Arduino
 ### END INIT INFO
 
-DESC="UART service to talk to Arduino"
-NAME=uart
-DAEMON=/home/pi/cg3002/uart.py
+DESC="Service that tweets IP"
+NAME=tweet-ip
+DAEMON=/home/pi/cg3002/tweet_ip.sh
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
@@ -30,7 +30,7 @@ DAEMON_USER=pi
 do_start()
 {
     log_daemon_msg "Starting system $NAME daemon"
-	start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON -- $DAEMON_ARGS
+    start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON -- $DAEMON_ARGS
     log_end_msg $?
 }
 
@@ -51,17 +51,17 @@ case "$1" in
     ;;
 
   restart)
-	do_stop
+    do_stop
     do_start
     ;;
-  
+
   status)
     status_of_proc "$NAME" "$DAEMON" && exit 0 || exit $?
     ;;
-	
+
   *)
-	echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
-	exit 3
-	;;
+    echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
+    exit 3
+    ;;
 esac
 exit 0

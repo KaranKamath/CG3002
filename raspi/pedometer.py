@@ -1,6 +1,6 @@
 import time
 import sys
-from Database.db import DB
+from db import DB
 foo = DB()
 
 

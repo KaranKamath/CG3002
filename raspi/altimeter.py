@@ -1,4 +1,4 @@
-from Database.db import DB
+from db import DB
 import time
 import sys
 
