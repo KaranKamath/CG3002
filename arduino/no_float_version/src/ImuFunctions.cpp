@@ -13,18 +13,10 @@ xSemaphoreHandle i2c_bus = 0;
 
 void imu(void *p) {
 	data_t dataRead;
-	byte i = 0;
 	while (1) {
 		altitude(&dataRead);
-		byte res = xQueueSendToBack(report, &dataRead, 500);
-		if (res) {
-			i = (i+1)%2;
-		}
-		if (i==0) {
-			digitalWrite(32, HIGH);
-		} else {
-			digitalWrite(32, LOW);
-		}
+		xQueueSendToBack(report, &dataRead, 500);
+		
 		gyroreader(&dataRead);
 		xQueueSendToBack(report, &dataRead, 500);
 		
@@ -34,13 +26,12 @@ void imu(void *p) {
 		vTaskDelay(DELAY_IMU);
 	}
 }
-// Pressure Raw is an integer. Is it possible to have Pi deal with converting it to meters/millimeters? Formula available.
+
 void altitude(data_t *psData) {
 	psData->id = IDALTI;
 	float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
 	psData->data[0] = floor(alti*1000+0.5);
 }
-			
 
 void altitude_init() {
 	ps.init();

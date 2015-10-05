@@ -18,10 +18,10 @@
 #include "Wire.h"
 #include "queue.h"
 
-#define QUEUE_SIZE 10
+#define QUEUE_SIZE 5
 #define MAX_NUM_DATA 6
 #define DELAY_IMU 500
-#define STACK_DEPTH 256
+#define STACK_DEPTH 205
 
 #define IDALTI 0
 #define IDACCMAG 1

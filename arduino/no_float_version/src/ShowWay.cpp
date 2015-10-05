@@ -2,6 +2,7 @@
 #include "global.h"
 #include "UartComm.h"
 #include "Obstacle.h"
+#include "ReadKeypad.h"
 
 LPS ps;
 L3G gyro;
@@ -24,7 +25,8 @@ void setup(void) {
 	setupUart();
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
 	//TODO: test if the queue is created correctly
-	//TODO: change to pointer
+	//TODO: change to pointer to save RAM? Data are overwritten 
+	setupKeypad();
 }
 
 int main(void)
@@ -33,12 +35,15 @@ int main(void)
 	init();
 	setup();
 	
-    TaskHandle_t alt, send, ui, motor;
+    TaskHandle_t alt, send, ui, motor, key;
 	
 	xTaskCreate(readDistanceSensors,"UI",STACK_DEPTH,NULL,3,&ui);
-	xTaskCreate(imu, "S", 256, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 256, NULL, 2, &send);
-	xTaskCreate(driveActuators,"M",STACK_DEPTH,NULL,2,&motor);
+	xTaskCreate(imu, "S", 205, NULL, 2, &alt);
+	xTaskCreate(sendData, "R", 205, NULL, 2, &send);
+	xTaskCreate(read_keypad, "K", STACK_DEPTH, NULL, 4, &key);
+	xTaskCreate(driveActuators,"M",205,NULL,2,&motor);
+	
+	
 	//TODO: test if tasks are created correctly
 	vTaskStartScheduler();
 }

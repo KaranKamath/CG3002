@@ -8,11 +8,10 @@
 #include "Obstacle.h"
 #include "debugging.h"
 
-//TODO: change to array of actuators
-const byte motor1Pins[2] = {4, 5};
-bool runMotor1 = false;
-const byte motor2Pins[2] = {7, 6};
-bool runMotor2 = false;
+#define NUMBER_MOTOR 2
+
+const byte motorPins[2*NUMBER_MOTOR] = {4, 5, 7, 6};
+bool runMotor[NUMBER_MOTOR] = {false, false};
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
@@ -22,15 +21,11 @@ void setupObstacle()
 	pinMode(TRIGGER_PIN, OUTPUT);
 	// Make the echo pin an input:
 	pinMode(ECHO_PIN, INPUT);
-	
-	//Initialize Motor pins
-	pinMode(motor1Pins[0],OUTPUT);
-	pinMode(motor1Pins[1],OUTPUT);
-	
-	//Initialize Motor pins
-	pinMode(motor2Pins[0],OUTPUT);
-	pinMode(motor2Pins[1],OUTPUT);
 
+	byte i = 0;
+	for (i = 0; i < 2*NUMBER_MOTOR; i++) {
+		pinMode(motorPins[i], OUTPUT);
+	}
 }
 
 void readDistanceSensors(void *p)
@@ -41,25 +36,26 @@ void readDistanceSensors(void *p)
 	
 	while(1)
 	{
+		byte i;
 		usecs = sonar.ping_median(ITERATIONS);
 		distance = sonar.convert_cm(usecs);
-		runMotor1 = false;
-		runMotor2 = false;
-		
+
+		for (i = 0; i < NUMBER_MOTOR; i++) {
+			runMotor[i] = false;
+		}
 		if ((0 < distance) && (distance < OBSTACLE_THRESHOLD)) {
 			dprintf("ULTRA: %d cm",distance);
 			//Start Actuator Task
-			runMotor1 = true;
+			runMotor[0] = true;
 		}
 
 		sensorValue = analogRead(sensorIR);
 		infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
-		//infraDist = 4192.936 * pow(sensorValue,-0.935) - 3.937;
 		
 		if ((20 < infraDist) && (infraDist < OBSTACLE_THRESHOLD)) {
 			dprintf("INFRARED: %d",(int)infraDist);
 			//Start Actuator Task
-			runMotor2 = true;
+			runMotor[1] = true;
 		}
 
 		vTaskDelay(100);
@@ -73,26 +69,18 @@ void driveActuators(void* pvParameters)
 	/* Infinite loop */
 	while (1)
 	{
+		byte i;
 		/* Vibrate Motor 1 */
-
-		if (runMotor1) {
+		for (i = 0; i < NUMBER_MOTOR; i++) {
+			if (runMotor[i]) {
 			/* Turn Motor On */
-			analogWrite(motor1Pins[1], MAX_PWM_VOLTAGE);
-			digitalWrite(motor1Pins[0], LOW);
-		} else {
+				analogWrite(motorPins[2*i+1], MAX_PWM_VOLTAGE);
+				digitalWrite(motorPins[2*i], LOW);
+			} else {
 			/* Turn Motor Off */
-			digitalWrite(motor1Pins[1], LOW);
-			digitalWrite(motor1Pins[0], LOW);
-		}
-		
-		if (runMotor2) {
-			/* Turn Motor On */
-			digitalWrite(motor2Pins[1], MAX_PWM_VOLTAGE);
-			digitalWrite(motor2Pins[0], LOW);
-		} else {
-			/* Turn Motor Off */
-			digitalWrite(motor2Pins[1], LOW);
-			digitalWrite(motor2Pins[0], LOW);	
+				digitalWrite(motorPins[2*i+1], LOW);
+				digitalWrite(motorPins[2*i], LOW);
+			}
 		}
 	}
 }
