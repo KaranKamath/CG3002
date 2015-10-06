@@ -4,12 +4,13 @@
  *  Author: Linh
  */ 
 
-#ifndef KEYPAD_H_
-#define KEYPAD_H_
+#ifndef READKEYPAD_H_
+#define READKEYPAD_H_
 
+#include "Keypad.h"
 void setupKeypad(void);
-void key_isr(void);
-void read_keypad(void *p);
+void keyIsr(void);
+void readKeypad(void *p);
 
 
-#endif /* KEYPAD_H_ */
+#endif /* READKEYPAD_H_ */

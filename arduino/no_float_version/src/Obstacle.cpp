@@ -21,9 +21,8 @@ void setupObstacle()
 	pinMode(TRIGGER_PIN, OUTPUT);
 	// Make the echo pin an input:
 	pinMode(ECHO_PIN, INPUT);
-
-	byte i = 0;
-	for (i = 0; i < 2*NUMBER_MOTOR; i++) {
+	
+	for (byte i = 0; i < 2*NUMBER_MOTOR; i++) {
 		pinMode(motorPins[i], OUTPUT);
 	}
 }
@@ -36,11 +35,10 @@ void readDistanceSensors(void *p)
 	
 	while(1)
 	{
-		byte i;
 		usecs = sonar.ping_median(ITERATIONS);
 		distance = sonar.convert_cm(usecs);
 
-		for (i = 0; i < NUMBER_MOTOR; i++) {
+		for (byte i = 0; i < NUMBER_MOTOR; i++) {
 			runMotor[i] = false;
 		}
 		if ((0 < distance) && (distance < OBSTACLE_THRESHOLD)) {
@@ -53,7 +51,7 @@ void readDistanceSensors(void *p)
 		infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
 		
 		if ((20 < infraDist) && (infraDist < OBSTACLE_THRESHOLD)) {
-			dprintf("INFRARED: %d",(int)infraDist);
+			dprintf("INFRA: %d",(int)infraDist);
 			//Start Actuator Task
 			runMotor[1] = true;
 		}
@@ -69,9 +67,8 @@ void driveActuators(void* pvParameters)
 	/* Infinite loop */
 	while (1)
 	{
-		byte i;
 		/* Vibrate Motor 1 */
-		for (i = 0; i < NUMBER_MOTOR; i++) {
+		for (byte i = 0; i < NUMBER_MOTOR; i++) {
 			if (runMotor[i]) {
 			/* Turn Motor On */
 				analogWrite(motorPins[2*i+1], MAX_PWM_VOLTAGE);

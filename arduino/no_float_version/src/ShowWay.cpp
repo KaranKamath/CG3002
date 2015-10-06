@@ -13,11 +13,7 @@ xQueueHandle report;
 void setup(void) {
 	Serial.begin(9600);
 	Wire.begin();
-	
-	pinMode(32, OUTPUT);
-	pinMode(26, OUTPUT);
-	pinMode(28, OUTPUT);
-	
+
 	altitude_init();
 	accemagno_init();
 	gyro_init();
@@ -37,11 +33,11 @@ int main(void)
 	
     TaskHandle_t alt, send, ui, motor, key;
 	
-	xTaskCreate(readDistanceSensors,"UI",STACK_DEPTH,NULL,3,&ui);
-	xTaskCreate(imu, "S", 205, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 205, NULL, 2, &send);
-	xTaskCreate(read_keypad, "K", STACK_DEPTH, NULL, 4, &key);
-	xTaskCreate(driveActuators,"M",205,NULL,2,&motor);
+	xTaskCreate(readDistanceSensors, "UI", 256, NULL, 3, &ui);
+	xTaskCreate(imu, "S", 200, NULL, 2, &alt);
+	xTaskCreate(sendData, "R", 200, NULL, 2, &send);
+	xTaskCreate(readKeypad, "K", 205, NULL, 2, &key);
+	xTaskCreate(driveActuators,"M", configMINIMAL_STACK_SIZE, NULL, 2, &motor);
 	
 	
 	//TODO: test if tasks are created correctly
