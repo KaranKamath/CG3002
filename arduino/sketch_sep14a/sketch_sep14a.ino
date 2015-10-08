@@ -123,10 +123,6 @@ void readAlti() {
     sequence);
 
     Serial.println(reportAlti);
-<<<<<<< HEAD
-    //Serial.println(altitude);
-=======
->>>>>>> origin/master
 }
 void readComp() {
     compass.read();
@@ -147,16 +143,6 @@ void readGyro() {
     snprintf(reportGyro, sizeof(report), "%d|%d, %d, %d|%d\n", IDGYRO, 
     gyro.g.x, gyro.g.y, gyro.g.z, sequence);
     Serial.println(reportGyro);
-<<<<<<< HEAD
-    //Serial.print("G ");
-    //Serial.print("X: ");
-    //Serial.print(gyro.g.x);
-    //Serial.print(" Y: ");
-    //Serial.print((int)gyro.g.y);
-    //Serial.print(" Z: ");
-    //Serial.println((int)gyro.g.z);
-=======
->>>>>>> origin/master
 }
 
 void keypadEvent(KeypadEvent key) {
