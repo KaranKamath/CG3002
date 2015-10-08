@@ -4,13 +4,12 @@ import time
 
 
 class DB(object):
-    RETRY_TIMEOUT = 10
 
     def __init__(self, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
 
-        self.conn = sqlite3.connect(db_name)
+        self.conn = sqlite3.connect(db_name, isolation_level=None)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS
             sensor_data(timestamp INTEGER,
@@ -18,7 +17,6 @@ class DB(object):
                         sensor_data TEXT,
                         PRIMARY KEY (timestamp))
         """)
-        self.conn.commit()
 
     def insert(self, sid, raw_data):
         data = json.dumps(raw_data)
@@ -26,7 +24,6 @@ class DB(object):
 
         query = 'INSERT INTO sensor_data values(?, ?, ?)'
         self.conn.execute(query, [timestamp, sid, data])
-        self.conn.commit()
 
     def fetch(self, since=0, sid=None, raw_data=None, auto_delete=False):
         params = [since]
@@ -50,13 +47,14 @@ class DB(object):
         return ret_val
 
     def delete(self, timestamps_to_delete):
-        delete_query = 'DELETE FROM sensor_data WHERE timestamps IN (?)'
-        timestamps_str = ','.join(timestamps_to_delete)
+        delete_query = 'DELETE FROM sensor_data WHERE timestamp IN (?)'
+        timestamps_str = ','.join([str(t) for t in timestamps_to_delete])
         self.conn.execute(delete_query, [timestamps_str])
-        self.conn.commit()
 
 if __name__ == '__main__':
-    foo = DB()
+    foo = DB('uart.db')
     print foo.fetch()
     foo.insert(1, {'data': {'x': 1, 'y': 2, 'z': 3}})
+    print foo.fetch()
+    print foo.fetch(auto_delete=True)
     print foo.fetch()
