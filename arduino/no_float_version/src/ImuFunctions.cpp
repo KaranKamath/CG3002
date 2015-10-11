@@ -14,6 +14,7 @@ xSemaphoreHandle i2c_bus = 0;
 void imu(void *p) {
 	data_t dataRead;
 	while (1) {
+		//Serial.println("imu");
 		altitude(&dataRead);
 		xQueueSendToBack(report, &dataRead, 500);
 		

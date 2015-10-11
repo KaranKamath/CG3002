@@ -18,11 +18,12 @@ void setup(void) {
 	accemagno_init();
 	gyro_init();
 	setupObstacle();
+	setupKeypad();
 	setupUart();
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
 	//TODO: test if the queue is created correctly
 	//TODO: change to pointer to save RAM? Data are overwritten 
-	setupKeypad();
+	
 }
 
 int main(void)
@@ -33,11 +34,10 @@ int main(void)
 	
     TaskHandle_t alt, send, ui, motor, key;
 	
-	xTaskCreate(readDistanceSensors, "UI", 256, NULL, 3, &ui);
+	xTaskCreate(readDistanceSensors, "UI", 200, NULL, 3, &ui);
 	xTaskCreate(imu, "S", 200, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 200, NULL, 2, &send);
-	xTaskCreate(readKeypad, "K", 205, NULL, 2, &key);
-	xTaskCreate(driveActuators,"M", configMINIMAL_STACK_SIZE, NULL, 2, &motor);
+	xTaskCreate(sendData, "R", 300, NULL, 2, &send);
+	//xTaskCreate(driveActuators,"M", configMINIMAL_STACK_SIZE, NULL, 2, &motor);
 	
 	
 	//TODO: test if tasks are created correctly

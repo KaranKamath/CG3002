@@ -8,10 +8,10 @@
 #include "Obstacle.h"
 #include "debugging.h"
 
-#define NUMBER_MOTOR 2
+//#define NUMBER_MOTOR 2
 
-const byte motorPins[2*NUMBER_MOTOR] = {4, 5, 7, 6};
-bool runMotor[NUMBER_MOTOR] = {false, false};
+//const byte motorPins[2*NUMBER_MOTOR] = {4, 5, 7, 6};
+//bool runMotor[NUMBER_MOTOR] = {false, false};
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
@@ -22,12 +22,55 @@ void setupObstacle()
 	// Make the echo pin an input:
 	pinMode(ECHO_PIN, INPUT);
 	
-	for (byte i = 0; i < 2*NUMBER_MOTOR; i++) {
+	/*for (byte i = 0; i < 2*NUMBER_MOTOR; i++) {
 		pinMode(motorPins[i], OUTPUT);
+	}*/
+}
+
+void readDistanceSensors(void *p) {
+	data_t dataRead;
+	while (1) {
+		//Serial.println("distance");
+		ultrasound(&dataRead);
+		xQueueSendToBack(report, &dataRead, 500);
+		
+		infrared_left(&dataRead);
+		xQueueSendToBack(report, &dataRead, 500);
+		
+		infrared_right(&dataRead);
+		xQueueSendToBack(report, &dataRead, 500);
+		
+		vTaskDelay(DELAY_DISTANCE);
 	}
 }
 
-void readDistanceSensors(void *p)
+void ultrasound(data_t *psData) {
+	psData->id = IDULTRA;
+	unsigned long distance = 0;
+	unsigned int usecs = 0;
+	usecs = sonar.ping_median(ITERATIONS);
+	distance = sonar.convert_cm(usecs);
+	psData->data[0] = distance;
+}
+
+void infrared_left(data_t *psData) {
+	psData->id = IDINFRALEFT;
+	float sensorValue, infraDist;
+	sensorValue = analogRead(IR_PIN_LEFT);
+	infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
+	psData->data[0] = infraDist;
+}
+
+void infrared_right(data_t *psData) {
+	psData->id = IDINFRARIGHT;
+	float sensorValue, infraDist;
+	sensorValue = analogRead(IR_PIN_RIGHT);
+	infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
+	psData->data[0] = infraDist;
+}
+
+
+/*void readDistanceSensors(void *p)
 {
 	unsigned long distance = 0;
 	unsigned int usecs = 0;
@@ -58,26 +101,26 @@ void readDistanceSensors(void *p)
 
 		vTaskDelay(100);
 	}
-}
+}*/
 
 
-void driveActuators(void* pvParameters)
-{
+//void driveActuators(void* pvParameters)
+///{
 	
 	/* Infinite loop */
-	while (1)
-	{
+	//while (1)
+	//{
 		/* Vibrate Motor 1 */
-		for (byte i = 0; i < NUMBER_MOTOR; i++) {
-			if (runMotor[i]) {
+		//for (byte i = 0; i < NUMBER_MOTOR; i++) {
+			//if (runMotor[i]) {
 			/* Turn Motor On */
-				analogWrite(motorPins[2*i+1], MAX_PWM_VOLTAGE);
-				digitalWrite(motorPins[2*i], LOW);
-			} else {
+			//	analogWrite(motorPins[2*i+1], MAX_PWM_VOLTAGE);
+			//	digitalWrite(motorPins[2*i], LOW);
+			//} else {
 			/* Turn Motor Off */
-				digitalWrite(motorPins[2*i+1], LOW);
-				digitalWrite(motorPins[2*i], LOW);
-			}
-		}
-	}
-}
+			//	digitalWrite(motorPins[2*i+1], LOW);
+			//	digitalWrite(motorPins[2*i], LOW);
+			//}
+		//}
+	//}
+//}
