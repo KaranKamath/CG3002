@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function log {
-    echo $1 >> /home/pi/logs/tweet_ip.log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> /home/pi/logs/tweet_ip.log
 }
 
 function tweet {
@@ -20,6 +20,15 @@ function tweet {
 
     response=`curl -s 'https://api.twitter.com/1.1/statuses/update.json' --data "status=My+IP+Address+is+${1}+%23${local_time}" --header "${header}"`
     log "$response"
+    {"errors":[{"code":135,"message":"Timestamp out of bounds."}]}
+    if [[ $response == *"\"errors\":"* ]]
+    then
+        if [[ $response == *"\"code\":135,"* ]] || [[ $response == *"\"code\":32,"* ]] ;
+        then
+            log "Retrying..."
+            tweet $ip
+        fi
+    fi
 }
 
 while true;
@@ -39,5 +48,5 @@ do
         mv /home/pi/.ip.tmp /home/pi/.ip
         tweet $ip
     fi
-    sleep 2;
+    sleep 5;
 done

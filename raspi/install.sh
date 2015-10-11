@@ -2,22 +2,33 @@ echo "Installing..."
 sudo service tweet-ip stop
 sudo cp tweet-ip-service.sh /etc/init.d/tweet-ip
 sudo chmod +x /etc/init.d/tweet-ip
-sudo update-rc.d tweet-ip defaults
+sudo insserv tweet-ip
 sudo service tweet-ip start
 
 sudo service uart stop
 sudo cp uart-service.sh /etc/init.d/uart
 sudo chmod +x /etc/init.d/uart
-sudo update-rc.d uart defaults
+sudo insserv uart
 sudo service uart start
 
-cron_exists=$(sudo crontab -l | grep 'rm -f /home/pi/.ip')
+cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/*'
+cron_exists=$(sudo crontab -l | grep "$cron_cmd")
 if [ $? -eq 1 ]
 then
-    echo "Adding cron..."
-    cron_cmd='@reboot rm -f /home/pi/.ip'
+    echo "Adding Tweet-IP cron..."
     (sudo crontab -l; echo "$cron_cmd" ) | crontab -
 else
-    echo "Cron exists already."
+    echo "Tweet-IP cron exists already."
 fi
+
+cron_cmd='* * * * * /home/pi/cg3002/wifi_reconnect.sh'
+cron_exists=$(sudo crontab -l | grep "$cron_cmd")
+if [ $? -eq 1 ]
+then
+    echo "Adding Wifi-Reconnect cron..."
+    (sudo crontab -l; echo "$cron_cmd" ) | crontab -
+else
+    echo "Wifi-Reconnect cron exists already."
+fi
+
 echo "Done"

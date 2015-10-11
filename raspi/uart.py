@@ -1,30 +1,28 @@
 #!/usr/bin/env python
 import logging
-import logging.handlers
 import argparse
 import sys
 import time
 import serial
+
+from logging.handlers import TimedRotatingFileHandler
 
 import db
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
 LOG_LEVEL = logging.INFO
 
-parser = argparse.ArgumentParser(description="Uart service")
-parser.add_argument("-l", "--log",
-                    help="log file (default: " + LOG_FILENAME + ")")
-args = parser.parse_args()
+p = argparse.ArgumentParser(description="Uart service")
+p.add_argument("-l", "--log", help="log file (default: " + LOG_FILENAME + ")")
+args = p.parse_args()
 if args.log:
         LOG_FILENAME = args.log
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
-handler = logging.handlers.TimedRotatingFileHandler(
-    LOG_FILENAME, when='midnight', backupCount=3)
-handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)-8s %(message)s'))
-logger.addHandler(handler)
+h = TimedRotatingFileHandler(LOG_FILENAME, when='H', backupCount=3)
+h.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
+logger.addHandler(h)
 
 
 class UartLogger(object):
@@ -43,10 +41,11 @@ sys.stderr = UartLogger(logger, logging.ERROR)
 
 class UartHandler():
 
-    def __init__(self, logger):
-        self.ser = serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
+    def __init__(self, logger, serial_line='/dev/ttyAMA0',
+                 baud_rate=9600, timeout=1):
+        self.ser = serial.Serial(serial_line, baud_rate, timeout=timeout)
         self.logger = logger
-        self.db = db.DB()
+        self.db = db.DB('/home/pi/db/uart.db')
         self.logger.info('Opening serial line')
 
     def _serial_read_line(self):
@@ -82,10 +81,17 @@ class UartHandler():
 
     def _store_data(self, device_id, data, seq_id):
         if device_id and data and seq_id:
+            self.db.insert_data(device_id, data)
             self.logger.info('Stored data '
                              '[device_id: %s, data: %s, seq_id: %s]',
                              device_id, data, seq_id)
-            self.db.insert(device_id, data)
+
+    def _store_origin_and_destination(self, origin, destination):
+        if origin and destination:
+            self.db.insert_origin_and_destination(origin, destination)
+            self.logger.info('Stored origin and destination '
+                             '[origin: %s, destination: %s]',
+                             origin, destination)
 
     def close(self):
         self.ser.close()
@@ -94,6 +100,20 @@ class UartHandler():
         self._wait_for_begin()
         self._sync_acks()
         self.logger.info('Handshake done...')
+
+    def read_origin_and_destination(self):
+        self.logger.info('Waiting for origin and destination...')
+        origin = self._serial_read_line().strip()
+        while not origin:
+            origin = self._serial_read_line().strip()
+        self.ser.write('ACK')
+
+        destination = self._serial_read_line().strip()
+        while not destination:
+            destination = self._serial_read_line().strip()
+        self.ser.write('ACK')
+        self.logger.info('Got [%s, %s]', origin, destination)
+        self._store_origin_and_destination(origin, destination)
 
     def stream_data(self):
         self.logger.info('Streaming data...')
@@ -109,6 +129,7 @@ class UartHandler():
 uart = UartHandler(logger)
 try:
     uart.perform_handshake()
+    uart.read_origin_and_destination()
     uart.stream_data()
 except KeyboardInterrupt:
     uart.close()
