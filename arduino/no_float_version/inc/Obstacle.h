@@ -12,22 +12,25 @@
 #include "global.h"
 #include "NewPing.h"
 
+#define NUM_SONAR 1
 #define TRIGGER_PIN 12
 #define ECHO_PIN 11
 #define MAX_DISTANCE 200
-#define ITERATIONS 5
-//#define OBSTACLE_THRESHOLD 80
-//#define MAX_PWM_VOLTAGE 127
-#define IR_PIN_LEFT 15
-#define IR_PIN_RIGHT 14
 
-extern xQueueHandle report;
+#define ITERATIONS 5
+#define OBSTACLE_THRESHOLD 80
+#define MAX_PWM_VOLTAGE 127
+#define IR_LEFT 15
+#define IR_RIGHT 14
+#define DELAY_DISTANCE 200
 
 void setupObstacle(void);
+void ultrasound(data_t* dataRead);
+void infrared(data_t* dataRead);
 void readDistanceSensors(void *p);
-//void driveActuators(void* pvParameters);
-void ultrasound(data_t *psData);
-void infrared_left(data_t *psData);
-void infrared_right(data_t *psData);
+
+//Test
+void driveActuators(byte id, float dist);
+
 
 #endif /* OBSTACLE_H_ */

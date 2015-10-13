@@ -8,7 +8,6 @@
 #define READKEYPAD_H_
 
 #include "Keypad.h"
-#include <stdio.h>
 void setupKeypad(void);
 void readKeypad(void);
 

@@ -19,10 +19,9 @@ void setup(void) {
 	gyro_init();
 	setupObstacle();
 	setupKeypad();
-	//setupUart();
+	setupUart();
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
 	//TODO: test if the queue is created correctly
-	//TODO: change to pointer to save RAM? Data are overwritten 
 	
 }
 
@@ -32,13 +31,11 @@ int main(void)
 	init();
 	setup();
 	
-    TaskHandle_t alt, send, ui, motor, key;
+    TaskHandle_t alt, send, ui;
 	
-	//xTaskCreate(readDistanceSensors, "UI", 200, NULL, 3, &ui);
+	xTaskCreate(readDistanceSensors, "UI", 256, NULL, 3, &ui);
 	xTaskCreate(imu, "S", 200, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 300, NULL, 2, &send);
-	//xTaskCreate(driveActuators,"M", configMINIMAL_STACK_SIZE, NULL, 2, &motor);
-	
+	xTaskCreate(sendData, "R", 200, NULL, 2, &send);
 	
 	//TODO: test if tasks are created correctly
 	vTaskStartScheduler();

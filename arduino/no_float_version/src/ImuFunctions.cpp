@@ -14,22 +14,18 @@ xSemaphoreHandle i2c_bus = 0;
 void imu(void *p) {
 	data_t dataRead;
 	while (1) {
-		//Serial.println("imu");
+		dataRead.id = IDIMU;
 		altitude(&dataRead);
-		xQueueSendToBack(report, &dataRead, 500);
-		
 		gyroreader(&dataRead);
-		xQueueSendToBack(report, &dataRead, 500);
-		
 		accemagno(&dataRead);
 		xQueueSendToBack(report, &dataRead, 500);
-		
+		//to test if the queue is full
+		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
 	}
 }
 
 void altitude(data_t *psData) {
-	psData->id = IDALTI;
 	float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
 	psData->data[0] = floor(alti*1000+0.5);
 }
@@ -41,10 +37,9 @@ void altitude_init() {
 
 void gyroreader (data_t *gyroData) {
 	gyro.read();
-	gyroData->id = IDGYRO;
-	gyroData->data[0] = gyro.g.x;
-	gyroData->data[1] = gyro.g.y;
-	gyroData->data[2] = gyro.g.z;
+	gyroData->data[OFFSETGY+0] = gyro.g.x;
+	gyroData->data[OFFSETGY+1] = gyro.g.y;
+	gyroData->data[OFFSETGY+2] = gyro.g.z;
 }
 
 void gyro_init(void) {
@@ -54,13 +49,12 @@ void gyro_init(void) {
 
 void accemagno(data_t *accmaData) {
 	accmag.read();
-	accmaData->id = IDACCMAG;
-	accmaData->data[0] = accmag.a.x;
-	accmaData->data[1] = accmag.a.y;
-	accmaData->data[2] = accmag.a.z;
-	accmaData->data[3] = accmag.m.x;
-	accmaData->data[4] = accmag.m.y;
-	accmaData->data[5] = accmag.m.z;
+	accmaData->data[OFFSETAM+0] = accmag.a.x;
+	accmaData->data[OFFSETAM+1] = accmag.a.y;
+	accmaData->data[OFFSETAM+2] = accmag.a.z;
+	accmaData->data[OFFSETAM+3] = accmag.m.x;
+	accmaData->data[OFFSETAM+4] = accmag.m.y;
+	accmaData->data[OFFSETAM+5] = accmag.m.z;
 }
 
 void accemagno_init(void) {
