@@ -20,15 +20,16 @@ void setupUart() {
 void handshake(void) {
 	char ack[SIZE_ACK + 2];
 	while (strcmp(ack, "ACK") != 0) {
-		Serial.write("BEGIN\n");
+		Serial1.write("BEGIN\n");
 		delay(DELAY_UART);
-		if (Serial.available()) {
-			Serial.readBytesUntil(0, ack, SIZE_ACK);
+		if (Serial1.available()) {
+			Serial1.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';
 		}
 	}
 	//to test
 	Serial.println(ack);
+	Serial1.write("ACK\n");
 	readKeypad();
 }
 
