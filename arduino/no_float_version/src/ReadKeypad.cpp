@@ -29,9 +29,6 @@ void readKeypad(void) {
 	while (1) {
 		key = keypad.getKey();			
 		if (key != NO_KEY) {
-			keydata[len] = key;
-			len++;
-			Serial.println(key);
 			//TODO: check for overflow
 			if (key != '#' && key != '*') {
 				keydata[len] = key;
@@ -55,6 +52,7 @@ void readKeypad(void) {
 		}	
 	}
 	
+	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
 		Serial1.write(keydata);
 		//delay or busy wait loop here
