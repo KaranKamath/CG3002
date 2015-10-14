@@ -63,8 +63,7 @@ class UartHandler():
         while True:
             self.ser.write('ACK')
             self.logger.info('Sent ACK')
-            data = self.ser.readline().strip()
-            if data == 'ACK':
+            if self._serial_read_line() == 'ACK':
                 self.logger.info('Got ACK')
                 return
             else:
@@ -73,28 +72,11 @@ class UartHandler():
     def _parse_data(self, raw_data):
         data_components = raw_data.split('|')
         if len(data_components) == 3:
-            device_id = data_components[0]
+            packet_type = data_components[0]
             data = [int(d.strip()) for d in data_components[1].split(',')]
             seq_id = data_components[2]
-            return (device_id, data, seq_id)
+            return (packet_type, data, seq_id)
         return (None, None, None)
-
-    def _store_data(self, device_id, data, seq_id):
-        if device_id and data and seq_id:
-            self.db.insert_data(device_id, data)
-            self.logger.info('Stored data '
-                             '[device_id: %s, data: %s, seq_id: %s]',
-                             device_id, data, seq_id)
-
-    def _store_origin_and_destination(self, origin, destination):
-        if origin and destination:
-            self.db.insert_origin_and_destination(origin, destination)
-            self.logger.info('Stored origin and destination '
-                             '[origin: %s, destination: %s]',
-                             origin, destination)
-
-    def close(self):
-        self.ser.close()
 
     def perform_handshake(self):
         self._wait_for_begin()
@@ -103,33 +85,27 @@ class UartHandler():
 
     def read_origin_and_destination(self):
         self.logger.info('Waiting for origin and destination...')
-        origin = self._serial_read_line().strip()
-        while not origin:
-            origin = self._serial_read_line().strip()
+        coords = self._serial_read_line()
+        while not coords:
+            coords = self._serial_read_line()
         self.ser.write('ACK')
-
-        destination = self._serial_read_line().strip()
-        while not destination:
-            destination = self._serial_read_line().strip()
-        self.ser.write('ACK')
+        origin, destination = coords.split('*')
+        self.db.insert_origin_and_destination(origin, destination)
         self.logger.info('Got [%s, %s]', origin, destination)
-        self._store_origin_and_destination(origin, destination)
 
-    def stream_data(self):
-        self.logger.info('Streaming data...')
+    def read_data(self):
+        self.logger.info('Waiting for data...')
         while True:
             data = self._serial_read_line()
-            self.logger.info('Received data: %s', data)
             if data:
-                (dev_id, data, seq_id) = self._parse_data(data)
-                self._store_data(dev_id, data, seq_id)
-                self.ser.write('ACK')
+                (packet_type, data, seq_id) = self._parse_data(data)
+                self.db.insert_data(packet_type, data)
+                self.logger.info('Stored data '
+                                 '[type: %s, data: %s, seq_id: %s]',
+                                 packet_type, data, seq_id)
 
 
 uart = UartHandler(logger)
-try:
-    uart.perform_handshake()
-    uart.read_origin_and_destination()
-    uart.stream_data()
-except KeyboardInterrupt:
-    uart.close()
+uart.perform_handshake()
+uart.read_origin_and_destination()
+uart.read_data()

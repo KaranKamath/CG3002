@@ -4,6 +4,8 @@ import time
 
 
 class DB(object):
+    data_to_insert = []
+    batch_size = 1000
 
     def __init__(self, db_name='uart.db'):
         if db_name.rfind('.db') == -1:
@@ -34,7 +36,7 @@ class DB(object):
             nav_coords(origin INTEGER,
                        destination INTEGER)
         """)
-        self.conn.execute('PRAGMA journal_mode=WAL')
+        self.conn.execute('PRAGMA journal_mode = WAL')
         self._close_conn()
 
     def _open_conn(self):
@@ -48,42 +50,40 @@ class DB(object):
 
     def insert_origin_and_destination(self, origin, destination):
         self._open_conn()
-
-        # clear existing nav coords
-        query = 'TRUNCATE TABLE nav_coords'
-        self.conn.execute(query)
-
-        # insert new ones
+        self.conn.execute('DELETE FROM nav_coords')
         query = 'INSERT INTO nav_coords values(?, ?)'
-        self.conn.execute(query, origin, destination)
+        self.conn.execute(query, [origin, destination])
         self._close_conn()
+
+    def fetch_origin_and_destination(self):
+        self._open_conn()
+        query = 'SELECT * FROM nav_coords LIMIT 1'
+        data = list(self.conn.execute(query))
+        self._close_conn()
+        if data:
+            return (data[0][0], data[0][1])
+        else:
+            return (None, None)
 
     def insert_data(self, sid, raw_data):
-        self._open_conn()
         data = json.dumps(raw_data)
         timestamp = int(round(time.time() * 1000))
-        query = 'INSERT INTO sensor_data values(?, ?, ?)'
-        self.conn.execute(query, [timestamp, sid, data])
-        self._close_conn()
+        self.data_to_insert.append([timestamp, sid, data])
+        if len(self.data_to_insert) >= self.batch_size:
+            self._open_conn()
+            self.conn.execute('BEGIN TRANSACTION')
+            query = 'INSERT INTO sensor_data values(?, ?, ?)'
+            self.conn.executemany(query, [d for d in self.data_to_insert])
+            self.conn.execute('END TRANSACTION')
+            self._close_conn()
+            self.data_to_insert = []
 
-    def insert_location(self, x, y, heading, altitude):
-        self._open_conn()
-        timestamp = int(round(time.time() * 1000))
-        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
-        self.conn.execute(query, [timestamp, x, y, heading, altitude])
-        self._close_conn()
-
-    def fetch_data(self, since=0, sid=None, raw_data=None, auto_delete=False):
+    def fetch_data(self, since=0, sid=None, auto_delete=False):
         params = [since]
         query = 'SELECT * FROM sensor_data WHERE timestamp > ?'
-
         if sid is not None:
             query += ' AND sensor_id=?'
             params.append(sid)
-
-        if raw_data is not None:
-            query += ' AND sensor_data=?'
-            params.append(json.dumps(raw_data))
 
         self._open_conn()
         ret_val = []
@@ -97,20 +97,23 @@ class DB(object):
 
     def delete_data(self, t_stmps_to_delete):
         self._open_conn()
+        self.conn.execute('BEGIN TRANSACTION')
         delete_query = 'DELETE FROM sensor_data WHERE timestamp = (?)'
         self.conn.executemany(delete_query,
                               [(str(t),) for t in t_stmps_to_delete])
+        self.conn.execute('END TRANSACTION')
         self._close_conn()
 
+    def insert_location(self, x, y, heading, altitude):
+        self._open_conn()
+        timestamp = int(round(time.time() * 1000))
+        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
+        self.conn.execute(query, [timestamp, x, y, heading, altitude])
+        self._close_conn()
 
 if __name__ == '__main__':
     foo = DB()
-    print foo.fetch_data()
-    foo.insert_data(0, [30000])
-    print foo.fetch_data()
-    print foo.fetch_data(auto_delete=True)
-    print foo.fetch_data()
-    for i in range(10):
-        foo.insert_data(0, [30000])
-        time.sleep(0.5)
-    print foo.fetch_data()
+    foo.insert_origin_and_destination(23423, 234234)
+    print foo.fetch_origin_and_destination()
+    foo.insert_origin_and_destination(23423, 24)
+    print foo.fetch_origin_and_destination()
