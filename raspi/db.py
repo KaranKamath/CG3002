@@ -5,7 +5,7 @@ import time
 
 class DB(object):
     data_to_insert = []
-    batch_size = 1000
+    batch_size = 5
 
     def __init__(self, db_name='uart.db'):
         if db_name.rfind('.db') == -1:
@@ -33,7 +33,9 @@ class DB(object):
         """)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS
-            nav_coords(origin INTEGER,
+            nav_coords(building INTEGER,
+                       level INTEGER,
+                       origin INTEGER,
                        destination INTEGER)
         """)
         self.conn.execute('PRAGMA journal_mode = WAL')
@@ -48,11 +50,12 @@ class DB(object):
         self.conn.close()
         self.conn = None
 
-    def insert_origin_and_destination(self, origin, destination):
+    def insert_origin_and_destination(self, building, level, origin,
+                                      destination):
         self._open_conn()
         self.conn.execute('DELETE FROM nav_coords')
-        query = 'INSERT INTO nav_coords values(?, ?)'
-        self.conn.execute(query, [origin, destination])
+        query = 'INSERT INTO nav_coords values(?, ?, ?, ?)'
+        self.conn.execute(query, [building, level, origin, destination])
         self._close_conn()
 
     def fetch_origin_and_destination(self):
@@ -60,10 +63,7 @@ class DB(object):
         query = 'SELECT * FROM nav_coords LIMIT 1'
         data = list(self.conn.execute(query))
         self._close_conn()
-        if data:
-            return (data[0][0], data[0][1])
-        else:
-            return (None, None)
+        return data[0] if data else [None, None, None, None]
 
     def insert_data(self, sid, raw_data):
         data = json.dumps(raw_data)
@@ -113,7 +113,7 @@ class DB(object):
 
 if __name__ == '__main__':
     foo = DB()
-    foo.insert_origin_and_destination(23423, 234234)
+    foo.insert_origin_and_destination(1, 2, 23423, 234234)
     print foo.fetch_origin_and_destination()
-    foo.insert_origin_and_destination(23423, 24)
+    foo.insert_origin_and_destination(1, 2, 23423, 24)
     print foo.fetch_origin_and_destination()

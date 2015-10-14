@@ -8,12 +8,18 @@ class MapsRepo(object):
     MAP_URL = 'http://showmyway.comp.nus.edu.sg/getMapInfo.php?'\
               'Building={building}&Level={level}'
     SPLIT_RE = re.compile('\s*,\s*')
+    BUILDING_MAP = {
+        1: 'COM1',
+        2: 'COM2'
+    }
 
     def __init__(self):
         self._maps = {}
 
     def _key_generator(self, building, level):
-        return building + '-' + level
+        if type(building) == int:
+            building = self.BUILDING_MAP.get(building, building)
+        return str(building) + '-' + str(level)
 
     def map(self, building, level, force_refetch=False):
         key = self._key_generator(building, level)
@@ -45,8 +51,8 @@ class MapsRepo(object):
     def _process_raw_map(self, raw_map):
         graph = {}
         for node in raw_map['map']:
-            graph[node['nodeId']] = {
-                'linkTo': self.SPLIT_RE.split(node['linkTo'].strip()),
+            graph[str(node['nodeId'])] = {
+                'linkTo': self.SPLIT_RE.split(str(node['linkTo']).strip()),
                 'x': int(node['x']),
                 'y': int(node['y']),
                 'name': node['nodeName']

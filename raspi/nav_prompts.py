@@ -3,7 +3,7 @@ from sys import platform as _platform
 from subprocess import Popen
 
 
-class NavPrompts(object):
+class NavPrompts():
 
     PROMPTS = {
         'left': 'audio/left.wav',
