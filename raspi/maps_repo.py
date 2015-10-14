@@ -9,17 +9,17 @@ class MapsRepo(object):
               'Building={building}&Level={level}'
     SPLIT_RE = re.compile('\s*,\s*')
     BUILDING_MAP = {
-        1: 'COM1',
-        2: 'COM2'
+        '1': 'COM1',
+        '2': 'COM2'
     }
 
     def __init__(self):
         self._maps = {}
 
     def _key_generator(self, building, level):
-        if type(building) == int:
-            building = self.BUILDING_MAP.get(building, building)
-        return str(building) + '-' + str(level)
+        if building in self.BUILDING_MAP:
+            building = self.BUILDING_MAP[building]
+        return building + '-' + level
 
     def map(self, building, level, force_refetch=False):
         key = self._key_generator(building, level)

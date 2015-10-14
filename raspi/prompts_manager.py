@@ -3,7 +3,7 @@ from sys import platform as _platform
 from subprocess import Popen
 
 
-class NavPrompts():
+class PromptsManager():
 
     PROMPTS = {
         'left': 'audio/left.wav',
@@ -25,7 +25,7 @@ class NavPrompts():
 
 if __name__ == '__main__':
     from time import sleep
-    obj = NavPrompts()
+    obj = PromptsManager()
     obj.prompt('left')
     sleep(0.5)
     obj.prompt('finish')

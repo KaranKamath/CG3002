@@ -19,26 +19,7 @@ def euclidean_dist(x1, y1, x2, y2):
     return sqrt((int(x1) - int(x2)) ** 2 + (int(y1) - int(y2)) ** 2)
 
 
-def vector_dot_3d(a, b):
-    if len(a) == 3 and len(b) == 3:
-        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2])
-    return None
-
-
-def vector_cross_3d(a, b):
-    if len(a) == 3 and len(b) == 3:
-        return ((a[1] * b[2]) - (a[2] * b[1]),
-                (a[2] * b[0]) - (a[0] * b[2]),
-                (a[0] * b[1]) - (a[1] * b[0]))
-    return None
-
-
-def vector_normalize_3d(a):
-    n = sqrt(vector_dot_3d(a, a))
-    return (a[0] / n, a[1] / n, a[2] / n)
-
-
-def run_dijkstra(graph, source, target):
+def dijkstra(graph, source, target):
     """Dijkstra's shortest path algorithm"""
     queue = PriorityQueue()
     dist = {source: 0}
