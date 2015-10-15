@@ -2,6 +2,9 @@
 #include "global.h"
 #include "ReadKeypad.h"
 #define SIZE_ACK 3
+#define NUM_STAR 3
+#define DELAY_KEYPAD 500
+#define DEBOUNCE_TIME 100
 
 const byte ROWS = 4; 
 const byte COLS = 3; 
@@ -11,12 +14,12 @@ char keys[ROWS][COLS] = {
 	{'7','8','9'},
 	{'*','0','#'}
 };
-byte rowPins[ROWS] = {22, 23, 24, 2}; 
-byte colPins[COLS] = {25, 26, 27};
+byte rowPins[ROWS] = {22, 24, 26, 28}; 
+byte colPins[COLS] = {30, 32, 34};
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS ); 
 void setupKeypad(void) {
-	keypad.setDebounceTime(100);
+	keypad.setDebounceTime(DEBOUNCE_TIME);
 }
 
 void readKeypad(void) {
@@ -25,7 +28,7 @@ void readKeypad(void) {
 	byte len = 0;
 	char keydata[40];
 	char ack [SIZE_ACK+2];
-	
+/*	
 	while (1) {
 		key = keypad.getKey();			
 		if (key != NO_KEY) {
@@ -36,12 +39,12 @@ void readKeypad(void) {
 				Serial.println(key);
 			} else if ((key == '#' || key == '*') && len == 0) {
 				continue;
-			} else if ((key == '#' || key == '*') && splCount == 0) {
+			} else if ((key == '#' || key == '*') && splCount != NUM_STAR) {
 				keydata[len] = '*';
 				len++;
 				splCount++;
 				Serial.println('*');
-			} else if ((key == '#' || key == '*') && splCount == 1) {
+			} else if ((key == '#' || key == '*') && splCount == NUM_STAR) {
 				keydata[len] = '\n';
 				len++;
 				keydata[len] = '\0';
@@ -51,13 +54,13 @@ void readKeypad(void) {
 			}
 		}	
 	}
-	
+*/	
+	strcpy(keydata, "1*2*1*10\n");
+	Serial.println(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
 		Serial1.write(keydata);
-		//delay or busy wait loop here
-		//delay(200);
-		//while (!Serial1.available());
+		delay(DELAY_KEYPAD);
 		if (Serial1.available()) {
 			Serial1.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';

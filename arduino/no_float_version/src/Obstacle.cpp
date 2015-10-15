@@ -11,20 +11,19 @@
 #include "debugging.h"
 
 //TODO: add more LED pin
-#define NUMBER_MOTOR 2
+#define NUMBER_LED 4
 
-const byte motorPins[2*NUMBER_MOTOR] = {4, 5, 7, 6};
-bool runMotor[NUMBER_MOTOR] = {false, false};
+const byte ledPins[NUMBER_LED] = {4, 5, 7, 6};
 
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+NewPing sonar(TRIGGER_UP, ECHO_UP, MAX_DISTANCE);
 
 void setupObstacle()
 {	
-	pinMode(TRIGGER_PIN, OUTPUT);
-	pinMode(ECHO_PIN, INPUT);
+	pinMode(TRIGGER_UP, OUTPUT);
+	pinMode(ECHO_UP, INPUT);
 	
-	for (byte i = 0; i < 2*NUMBER_MOTOR; i++) {
-		pinMode(motorPins[i], OUTPUT);
+	for (byte i = 0; i < NUMBER_LED; i++) {
+		pinMode(ledPins[i], OUTPUT);
 	}
 	
 	pinMode(IR_RIGHT, INPUT);
@@ -66,14 +65,23 @@ void infrared(data_t* dataRead)
 	dataRead->data[2] = infraDist;
 }
 
+void stub_ob(int i, data_t* dataRead) {
+	int j = 1;
+	for (j = 1; j < 4; j++) {
+		dataRead->data[j] = 0;
+	}
+}
 void readDistanceSensors(void *p)
 {
 	data_t dataRead;
 	dataRead.id = IDOBSTACLE;
+	byte i = 0;
 	while (1) {
 		//Serial.println("distance");
 		ultrasound(&dataRead);
-		infrared(&dataRead);
+/*		infrared(&dataRead);*/
+		stub_ob(i, &dataRead);
+		i = (i+1)%2;
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		xQueueSendToBack(report, &dataRead, 500);
 			
@@ -84,15 +92,14 @@ void readDistanceSensors(void *p)
 //Testing purpose
 void driveActuators(byte id, float dist)
 {
-	if (id >= NUMBER_MOTOR) {
+	if (id >= NUMBER_LED) {
 		return;
 	}
-	digitalWrite(motorPins[2*id], LOW);
 	bool on = (dist > 0 && dist < OBSTACLE_THRESHOLD);
-	dprintf("%d: %d", id, (int)dist);
+//	dprintf("%d: %d", id, (int)dist);
 	if (on) {
-		analogWrite(motorPins[2*id+1], MAX_PWM_VOLTAGE);
+		digitalWrite(ledPins[id], HIGH);
 	} else {
-		digitalWrite(motorPins[2*id+1], LOW);	
+		digitalWrite(ledPins[id], LOW);	
 	}
 }
