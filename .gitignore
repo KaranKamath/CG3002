@@ -89,3 +89,8 @@ docs/_build/
 # PyBuilder
 target/
 
+# Text Editors
+*.swp
+
+# Misc
+*.db
