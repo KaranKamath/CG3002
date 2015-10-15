@@ -75,6 +75,9 @@ class LocationApproximator(object):
         self.data_buffer.append(normalized_vals)
         self.heading_buffer.append(heading)
 
+    def get_position(self):
+        return (self.x, self.y)
+
     def get_new_position(self):
         self.flush()
         return (self.x, self.y)
