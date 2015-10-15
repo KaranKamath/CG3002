@@ -1,17 +1,25 @@
 echo "Installing..."
 sudo service tweet-ip stop
-sudo rm -f /home/pi/logs/tweet_ip.log
+sudo rm -f /home/pi/logs/tweet_ip.log*
 sudo cp tweet-ip-service.sh /etc/init.d/tweet-ip
 sudo chmod +x /etc/init.d/tweet-ip
 sudo insserv tweet-ip
 sudo service tweet-ip start
 
 sudo service uart stop
-sudo rm -f /home/pi/logs/uart.log
+sudo rm -f /home/pi/logs/uart.log*
 sudo cp uart-service.sh /etc/init.d/uart
 sudo chmod +x /etc/init.d/uart
 sudo insserv uart
 sudo service uart start
+
+sudo service navi stop
+sudo rm -f /home/pi/logs/navi.log*
+sudo cp navi-service.sh /etc/init.d/navi
+sudo chmod +x /etc/init.d/navi
+sudo insserv navi
+sudo service navi start
+
 
 cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/*'
 cron_exists=$(sudo crontab -l | grep "$cron_cmd")

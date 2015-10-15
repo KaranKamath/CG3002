@@ -59,7 +59,9 @@ class LocationGenerator(object):
             latest_imu_data = imu_data[-1]
             altitude = self._get_altitude(latest_imu_data)
             heading = self._get_heading(latest_imu_data)
-            print altitude, heading
+
+            x, y = 0, 0
+            self.db.insert_location(x, y, heading, altitude)
             time.sleep(0.5)
 
 
