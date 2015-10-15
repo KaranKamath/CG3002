@@ -41,6 +41,7 @@ class LocationApproximator(object):
         return self.step_count
 
     def flush(self):
+        logger.info('Flushing values: %s', self.data_buffer)
         low_passed_vals = butter_lowpass_filter(self.data_buffer, CUTOFF, FS, FILTER_ORDER)
         peak_indices = signal.argrelmax(low_passed_vals)[0]
         peak_vals = [low_passed_vals[x] for x in peak_indices]

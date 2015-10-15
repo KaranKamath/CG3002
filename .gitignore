@@ -91,3 +91,6 @@ target/
 
 # Text Editors
 *.swp
+
+# Misc
+*.db
