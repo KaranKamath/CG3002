@@ -28,13 +28,14 @@ def now():
 
 class LocationApproximator(object):
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, logger):
         self.data_buffer = []
         self.step_count = 0
         self.last_batch_steps = 0
         self.heading_buffer = []
         self.x = x
         self.y = y
+        self.logger = logger
 
     def get_step_count(self):
         return self.step_count
@@ -52,12 +53,21 @@ class LocationApproximator(object):
         self.data_buffer = []
         self.count = self.count + len(accepted_peaks)
 
+        logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
+        logger.info('Total Steps Counted: %s', str(self.count))
+
         average_dist = self.last_batch_steps * STEP_LENGTH * 1.0 / len(last_batch_headings)
         vectorsX = [average_dist * cos(radians(heading)) for heading in self.last_batch_headings]
         vectorsY = [average_dist * sin(radians(heading)) for heading in self.last_batch_headings]
 
+        logger.info('Delta X: %s', str(sum(vectorsX)))
+        logger.info('Delta Y: %s', str(sum(vectorsY)))
+
         self.x = self.x + sum(vectorsX)
         self.y = self.y + sum(vectorsY)
+
+        logger.info('New X: %s', str(self.x))
+        logger.info('New Y: %s', str(self.y))
 
     def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
@@ -65,6 +75,8 @@ class LocationApproximator(object):
 
         fetched_values = [ (datapoint[1] + datapoint[2] + datapoint[3]) * 1.0 / 3.0 \
                             for datapoint in fetched_data]
+
+        logger.info('Values Rcvd: %s', str(len(fetched_values)))
 
         if len(fetched_values) < 1:
             print "no value"
