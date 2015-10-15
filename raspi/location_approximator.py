@@ -45,7 +45,7 @@ class LocationApproximator(object):
     def get_step_count(self):
         return self.step_count
 
-    def get_new_positions(self, fetched_data, heading, x, y):
+    def get_new_position(self, fetched_data, heading, x, y):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
