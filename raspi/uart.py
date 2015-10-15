@@ -58,12 +58,11 @@ class UartHandler():
 
     def _parse_data(self, raw_data):
         data_components = raw_data.split('|')
-        if len(data_components) == 3:
+        if len(data_components) == 2:
             packet_type = data_components[0]
             data = [int(d.strip()) for d in data_components[1].split(',')]
-            seq_id = data_components[2]
-            return (packet_type, data, seq_id)
-        return (None, None, None)
+            return (packet_type, data)
+        return (None, None)
 
     def perform_handshake(self):
         self._wait_for_begin()
@@ -87,11 +86,10 @@ class UartHandler():
         while True:
             data = self._serial_read_line()
             if data:
-                (packet_type, data, seq_id) = self._parse_data(data)
+                (packet_type, data) = self._parse_data(data)
                 self.db.insert_data(packet_type, data)
-                self.logger.info('Stored data '
-                                 '[type: %s, data: %s, seq_id: %s]',
-                                 packet_type, data, seq_id)
+                self.logger.info('Stored data [type: %s, data: %s]',
+                                 packet_type, data)
 
 
 uart = UartHandler(logger)

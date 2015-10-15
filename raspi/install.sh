@@ -20,6 +20,13 @@ sudo chmod +x /etc/init.d/navi
 sudo insserv navi
 sudo service navi start
 
+sudo service localizer stop
+sudo rm -f /home/pi/logs/localizer.log*
+sudo cp localizer-service.sh /etc/init.d/localizer
+sudo chmod +x /etc/init.d/localizer
+sudo insserv localizer
+sudo service localizer start
+
 
 cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/*'
 cron_exists=$(sudo crontab -l | grep "$cron_cmd")
