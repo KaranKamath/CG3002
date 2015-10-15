@@ -1,23 +1,16 @@
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 from enum import Enum
 from db import DB
 from scipy import signal
 from math import radians, cos, sin
 
-THRESHOLD_CALLS = 4
 STEP_LENGTH = 50 #cm
 THRESHOLD_MIN_NORM_VAL = 0.2
 FILTER_ORDER = 5
 FS = 10 #Sample Rate
 CUTOFF = 1
 ACC_MAX_VAL = 32768
-
-plt.axis([0, 1000, 0, 1])
-plt.ion()
-plt.show()
-count = 0
 
 def butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
@@ -36,7 +29,6 @@ def now():
 class LocationApproximator(object):
 
     def __init__(self, x, y):
-        self.call_count = 0
         self.data_buffer = []
         self.step_count = 0
         self.last_batch_steps = 0
@@ -67,7 +59,7 @@ class LocationApproximator(object):
         self.x = self.x + sum(vectorsX)
         self.y = self.y + sum(vectorsY)
 
-    def get_new_position(self, fetched_data, heading):
+    def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
@@ -82,18 +74,10 @@ class LocationApproximator(object):
 
         self.data_buffer.append(normalized_vals)
         self.heading_buffer.append(heading)
-        self.call_count = self.call_count + 1
 
-        if self.call_count == THRESHOLD_CALLS:
-            print "Update Iter. Work to do"
-            self.call_count = 0
-        else:
-            print "Iter ", self.call_count
-            return (self.x, self.y)
-
+    def get_new_position(self):
         self.flush()
-
-        return ( self.x, self.y )
+        return (self.x, self.y)
 
 #if __name__ == "__main__":
 #    sc = StepCounter())
