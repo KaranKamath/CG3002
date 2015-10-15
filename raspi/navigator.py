@@ -40,7 +40,6 @@ class Navigator(object):
         # self.db = DB('uart.db')
         self.maps = MapsRepo()
         self.prompts = PromptsManager()
-        self.prompts.prompt('left')
         self.log = logger
         self.log.info("Starting navigator...")
 
