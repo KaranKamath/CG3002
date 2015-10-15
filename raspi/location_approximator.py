@@ -93,7 +93,7 @@ class LocationApproximator(object):
 
         normalized_vals = [v * 1.0 / ACC_MAX_VAL for v in fetched_values]
 
-        self.data_buffer.append(normalized_vals)
+        self.data_buffer.extend(normalized_vals)
         self.heading_buffer.append(heading)
 
     def get_position(self):
