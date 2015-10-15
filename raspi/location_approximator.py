@@ -35,17 +35,39 @@ def now():
 
 class LocationApproximator(object):
 
-    def __init__(self):
+    def __init__(self, x, y):
         self.call_count = 0
         self.data_buffer = []
         self.step_count = 0
         self.last_batch_steps = 0
         self.heading_buffer = []
+        self.x = x
+        self.y = y
 
     def get_step_count(self):
         return self.step_count
 
-    def get_new_position(self, fetched_data, heading, x, y):
+    def flush(self):
+        low_passed_vals = butter_lowpass_filter(self.data_buffer, CUTOFF, FS, FILTER_ORDER)
+        peak_indices = signal.argrelmax(low_passed_vals)[0]
+        peak_vals = [low_passed_vals[x] for x in peak_indices]
+        accepted_peaks = [x for x in peak_vals if x > MIN_NORM_THRESHOLD]
+
+        self.last_batch_steps = len(accepted_peaks)
+        self.last_batch_headings = self.heading_buffer
+
+        self.heading_buffer = []
+        self.data_buffer = []
+        self.count = self.count + len(accepted_peaks)
+
+        average_dist = self.last_batch_steps * STEP_LENGTH * 1.0 / len(last_batch_headings)
+        vectorsX = [average_dist * cos(radians(heading)) for heading in self.last_batch_headings]
+        vectorsY = [average_dist * sin(radians(heading)) for heading in self.last_batch_headings]
+
+        self.x = self.x + sum(vectorsX)
+        self.y = self.y + sum(vectorsY)
+
+    def get_new_position(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
@@ -67,25 +89,11 @@ class LocationApproximator(object):
             self.call_count = 0
         else:
             print "Iter ", self.call_count
-            return (x, y)
+            return (self.x, self.y)
 
-        low_passed_vals = butter_lowpass_filter(self.data_buffer, CUTOFF, FS, FILTER_ORDER)
-        peak_indices = signal.argrelmax(low_passed_vals)[0]
-        peak_vals = [low_passed_vals[x] for x in peak_indices]
-        accepted_peaks = [x for x in peak_vals if x > MIN_NORM_THRESHOLD]
+        self.flush()
 
-        self.last_batch_steps = len(accepted_peaks)
-        self.last_batch_headings = self.heading_buffer
-
-        self.heading_buffer = []
-        self.data_buffer = []
-        self.count = self.count + len(accepted_peaks)
-
-        average_dist = self.last_batch_steps * STEP_LENGTH * 1.0 / len(last_batch_headings)
-        vectorsX = [average_dist * cos(radians(heading)) for heading in self.last_batch_headings]
-        vectorsY = [average_dist * sin(radians(heading)) for heading in self.last_batch_headings]
-
-        return ( x + sum(vectorsX), y + sum(vectorsY) )
+        return ( self.x, self.y )
 
 #if __name__ == "__main__":
 #    sc = StepCounter())
