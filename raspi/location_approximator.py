@@ -72,8 +72,8 @@ class LocationApproximator(object):
         self.logger.info('Delta X: %s', str(sum(vectorsX)))
         self.logger.info('Delta Y: %s', str(sum(vectorsY)))
 
-        self.x = self.x + sum(vectorsX)
-        self.y = self.y + sum(vectorsY)
+        self.x = self.x + int(sum(vectorsX).round())
+        self.y = self.y + int(sum(vectorsY).round())
 
         self.logger.info('New X: %s', str(self.x))
         self.logger.info('New Y: %s', str(self.y))
