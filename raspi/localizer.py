@@ -8,6 +8,7 @@ from db import DB
 from location_approximator import LocationApproximator
 from utils import CommonLogger, init_logger
 from vector_ops import dot_3d, cross_3d, normalize_3d
+from directions_utils import convert_heading_to_horizontal_axis
 
 LOG_FILENAME = '/home/pi/logs/localizer.log'
 logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
@@ -28,7 +29,6 @@ class Localizer():
 
     def __init__(self, logger, init_x=0, init_y=0):
         self.db = DB()
-        # self.db = DB('uart.db')
         self.log = logger
         timestamp = int(round(time.time() * 1000))
         for device in self.device_timestamps:
@@ -45,14 +45,17 @@ class Localizer():
         a = data[1:4]
         m = data[4:7]
         f = [0, 0, 1]
+        raw_heading = self._calculate_raw_heading(a, m, f)
+        return convert_heading_to_horizontal_axis(raw_heading,
+                                                  self.map_north)
 
+    def _calculate_raw_heading(self, a, m, f):
         m = (m[0] - (self.mag_min[0] + self.mag_max[0]) / 2,
              m[1] - (self.mag_min[1] + self.mag_max[1]) / 2,
              m[2] - (self.mag_min[2] + self.mag_max[2]) / 2)
         e = normalize_3d(cross_3d(m, a))
         n = normalize_3d(cross_3d(a, e))
-        heading = atan2(dot_3d(e, f),
-                        dot_3d(n, f)) * 180 / pi
+        heading = atan2(dot_3d(e, f), dot_3d(n, f)) * 180 / pi
         return (heading + 360) if heading < 0 else heading
 
     def _get_coords(self, data, heading):
@@ -63,6 +66,17 @@ class Localizer():
         else:
             self.coords_offset += 1
             return self.loc_approx.get_position()
+
+    def _process_imu(self, imu_data):
+        if not imu_data:
+            return
+        latest_imu_data = imu_data[-1]
+        altitude = self._get_altitude(latest_imu_data)
+        heading = self._get_heading(latest_imu_data)
+        x, y = self._get_coords(imu_data, heading)
+        self.db.insert_location(x, y, heading, altitude)
+        self.log.info('Updated location to %s, %s, %s, %s',
+                      x, y, heading, altitude)
 
     def _get_latest_readings(self):
         latest_data = {}
@@ -75,23 +89,23 @@ class Localizer():
                 latest_data[k] = None
         return latest_data
 
-    def _process_imu(self, imu_data):
-        if imu_data:
-            latest_imu_data = imu_data[-1]
-            altitude = self._get_altitude(latest_imu_data)
-            heading = self._get_heading(latest_imu_data)
-            x, y = self._get_coords(imu_data, heading)
-            self.db.insert_location(x, y, heading, altitude)
+    def _initalize_location(self):
+        self.log.info('Waiting for inital x, y and map north...')
+        timestamp, x, y, heading, alt = self.db.fetch_location(True)
+        self.db.delete_locations()
+        self.map_north = heading
+        self.init_x = x
+        self.init_y = y
+        self.log.info('Set initial [x, y] to [%s, %s]', x, y)
+        self.log.info('Set map north to %s', heading)
 
     def start(self):
-        self.log.info('Starting up...')
-        tstmp, x, y, heading, alt = self.db.fetch_location()
-        while x is None or y is None:
-            tstmp, x, y, heading, alt = self.db.fetch_location()
-        self.loc_approx = LocationApproximator(x, y, self.log)
+        self._initalize_location()
+        self.loc_approx = LocationApproximator(self.init_x,
+                                               self.init_y,
+                                               self.log)
         while True:
             data = self._get_latest_readings()
-            self.log.info('Got data: %s', str(data))
             self._process_imu(data[0])
             time.sleep(0.5)
 

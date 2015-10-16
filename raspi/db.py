@@ -59,12 +59,20 @@ class DB(object):
         self.conn.execute(query, params)
         self._close_conn()
 
-    def fetch_origin_and_destination(self):
-        self._open_conn()
+    def fetch_origin_and_destination(self, blocking=False):
         query = 'SELECT * FROM nav_coords LIMIT 1'
+        self._open_conn()
         data = list(self.conn.execute(query))
         self._close_conn()
-        return [str(d) for d in data[0]] if data else [None, None, None, None]
+        if not blocking:
+            return [str(d) for d in data[0]] if data else None
+
+        self._open_conn()
+        while not data:
+            time.sleep(0.5)
+            data = list(self.conn.execute(query))
+        self._close_conn()
+        return [str(d) for d in data[0]]
 
     def insert_data(self, sid, raw_data):
         data = json.dumps(raw_data)
@@ -105,19 +113,32 @@ class DB(object):
         self.conn.execute('END TRANSACTION')
         self._close_conn()
 
-    def insert_location(self, x, y, heading, altitude):
+    def insert_location(self, x, y, heading, altitude, initial=False):
         self._open_conn()
-        timestamp = int(round(time.time() * 1000))
+        timestamp = 0 if initial else int(round(time.time() * 1000))
         query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
 
-    def fetch_location(self):
-        self._open_conn()
+    def fetch_location(self, blocking=False):
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
+        self._open_conn()
         data = list(self.conn.execute(query))
         self._close_conn()
-        return data[0] if data else [None, None, None, None, None]
+        if not blocking:
+            return data[0] if data else None
+
+        self._open_conn()
+        while not data:
+            time.sleep(0.5)
+            data = list(self.conn.execute(query))
+        self._close_conn()
+        return data[0]
+
+    def delete_locations(self):
+        self._open_conn()
+        self.conn.execute('DELETE FROM user_location')
+        self._close_conn()
 
 if __name__ == '__main__':
     foo = DB()
