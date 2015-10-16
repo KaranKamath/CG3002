@@ -7,7 +7,7 @@ class DB(object):
     data_to_insert = []
     batch_size = 5
 
-    def __init__(self, db_name='uart.db'):
+    def __init__(self, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
         self.db_name = db_name

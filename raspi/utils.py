@@ -1,5 +1,9 @@
 import time
+import argparse
+import logging as log
 from math import sqrt
+from logging.handlers import TimedRotatingFileHandler
+
 from pq import PriorityQueue
 import db
 
@@ -13,6 +17,20 @@ class CommonLogger(object):
     def write(self, message):
         if message.rstrip() != '':
             self.logger.log(self.level, message.rstrip())
+
+
+def init_logger(logger, logfile):
+    p = argparse.ArgumentParser()
+    p.add_argument("-l", "--log", help="log file (default: " + logfile + ")")
+    args = p.parse_args()
+    logfile = args.log if args.log else logfile
+
+    handler = TimedRotatingFileHandler(logfile, when='H', backupCount=3)
+    log_format = '%(asctime)s %(levelname)-8s %(message)s'
+    handler.setFormatter(log.Formatter(log_format))
+    logger.setLevel(log.INFO)
+    logger.addHandler(handler)
+    return logger
 
 
 def euclidean_dist(x1, y1, x2, y2):

@@ -4,27 +4,13 @@ import logging
 import sys
 import time
 from math import atan2, pi
-from logging.handlers import TimedRotatingFileHandler
-
 from db import DB
 from location_approximator import LocationApproximator
-from utils import CommonLogger
+from utils import CommonLogger, init_logger
 from vector_ops import dot_3d, cross_3d, normalize_3d
 
 LOG_FILENAME = '/home/pi/logs/localizer.log'
-LOG_LEVEL = logging.INFO
-
-p = argparse.ArgumentParser(description="Localizer service")
-p.add_argument("-l", "--log", help="log file (default: " + LOG_FILENAME + ")")
-args = p.parse_args()
-if args.log:
-    LOG_FILENAME = args.log
-
-logger = logging.getLogger(__name__)
-logger.setLevel(LOG_LEVEL)
-h = TimedRotatingFileHandler(LOG_FILENAME, when='H', backupCount=3)
-h.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
-logger.addHandler(h)
+logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
@@ -41,9 +27,8 @@ class Localizer():
     coords_offset = 0
 
     def __init__(self, logger, init_x=0, init_y=0):
-        self.db = DB('/home/pi/db/uart.db')
+        self.db = DB()
         # self.db = DB('uart.db')
-        self.loc_approx = LocationApproximator(init_x, init_y, logger)
         self.log = logger
         timestamp = int(round(time.time() * 1000))
         for device in self.device_timestamps:
@@ -100,6 +85,10 @@ class Localizer():
 
     def start(self):
         self.log.info('Starting up...')
+        tstmp, x, y, heading, alt = self.db.fetch_location()
+        while x is None or y is None:
+            tstmp, x, y, heading, alt = self.db.fetch_location()
+        self.loc_approx = LocationApproximator(x, y, self.log)
         while True:
             data = self._get_latest_readings()
             self.log.info('Got data: %s', str(data))

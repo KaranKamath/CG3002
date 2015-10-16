@@ -2,14 +2,16 @@ import os
 from sys import platform as _platform
 from subprocess import Popen
 
+BASE_AUDIO_DIR = '/home/pi/cg3002/audio/'
+
 
 class PromptsManager():
 
     PROMPTS = {
-        'left': 'audio/left.wav',
-        'right': 'audio/right.wav',
-        'straight': 'audio/straight.wav',
-        'finish': 'audio/dest_reached.wav'
+        'left': BASE_AUDIO_DIR + 'left.wav',
+        'right': BASE_AUDIO_DIR + 'right.wav',
+        'straight': BASE_AUDIO_DIR + 'straight.wav',
+        'finish': BASE_AUDIO_DIR + 'dest_reached.wav'
     }
     PLAYER = 'afplay' if _platform == 'darwin' else 'aplay'
 
