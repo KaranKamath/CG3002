@@ -2,13 +2,16 @@
 import argparse
 import logging
 import sys
-from time import sleep
+import time
 from math import atan2, degrees
+
 from db import DB
 from maps_repo import MapsRepo
-from utils import CommonLogger, dijkstra, euclidean_dist, init_logger
-from prompts_manager import PromptsManager
+from prompts_enum import PromptDirn
 from directions_utils import normalize
+from audio_driver import AudioDriver
+from motor_driver import MotorDriver
+from utils import CommonLogger, dijkstra, euclidean_dist, init_logger
 
 
 LOG_FILENAME = '/home/pi/logs/navi.log'
@@ -23,11 +26,14 @@ class Navigator(object):
     DISTANCE_THRESHOLD = 100
 
     def __init__(self, logger):
-        self.db = DB()
-        self.maps = MapsRepo()
-        self.prompts = PromptsManager()
         self.log = logger
         self.log.info('Starting navigator...')
+        self.db = DB()
+        self.maps = MapsRepo()
+        self.audio = AudioDriver()
+        self.motors = MotorDriver()
+        self.current_prompt = None
+        self.navigation_finished = False
 
     @property
     def next_node(self):
@@ -41,7 +47,7 @@ class Navigator(object):
     def user_location(self):
         t_stmp, x, y, heading, alt = self.db.fetch_location(True)
         while t_stmp == 0:
-            sleep(0.5)
+            time.sleep(0.5)
             t_stmp, x, y, heading, alt = self.db.fetch_location(True)
         return (x, y, heading, alt)
 
@@ -50,9 +56,15 @@ class Navigator(object):
         self._get_map()
         self._generate_path()
         self._acquire_next_node()
-        while True:
+        while not self.navigation_finished:
             self._navigate_to_next_node()
-            sleep(3)
+            time.sleep(3)
+
+    def stop(self):
+        self.navigation_finished = True
+        self.current_prompt = PromptDirn.end
+        self.audio.prompt(self.current_prompt)
+        self.motors.prompt(self.current_prompt)
 
     def _wait_for_origin_and_destination(self):
         self.log.info('Waiting for origin and destination...')
@@ -101,8 +113,12 @@ class Navigator(object):
         if dist < self.DISTANCE_THRESHOLD:
             self.log.info('Reached node %s', self.next_node_id)
             self.next_node_idx += 1
-            self.log.info('Navigating to node %s', self.next_node_id)
-            self._navigate_to_next_node()
+            if self.next_node_idx == len(self.path):
+                self.log.info('Reached destination node')
+                self.stop()
+            else:
+                self.log.info('Navigating to node %s', self.next_node_id)
+                self._navigate_to_next_node()
         else:
             self._generate_prompt(angle)
 
@@ -110,18 +126,21 @@ class Navigator(object):
         distance = int(round(euclidean_dist(node_x, node_y, x, y)))
         if distance < self.DISTANCE_THRESHOLD:
             return (distance, 0)
-        turn_to_angle = int(round(normalize(
-            heading - degrees(atan2(node_y - y, node_x - x))
-        )))
-        return (distance, turn_to_angle)
+        turn_to_angle = degrees(atan2(node_y - y, node_x - x)) - heading
+        return (distance, int(round(normalize(turn_to_angle))))
 
     def _generate_prompt(self, angle):
         if abs(angle) < self.ANGLE_THRESHOLD:
-            self.prompts.prompt('straight')
+            new_prompt = PromptDirn.straight
         elif angle > 0:
-            self.prompts.prompt('right')
+            new_prompt = PromptDirn.left
         else:
-            self.prompts.prompt('left')
+            new_prompt = PromptDirn.right
+
+        if self.current_prompt is None or self.current_prompt != new_prompt:
+            self.current_prompt = new_prompt
+            self.audio.prompt(new_prompt)
+            self.motors.prompt(new_prompt)
 
 
 nav = Navigator(logger)

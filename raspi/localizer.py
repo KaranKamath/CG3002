@@ -16,7 +16,7 @@ sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 
-class Localizer():
+class Localizer(object):
 
     device_timestamps = {
         0: 0,

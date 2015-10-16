@@ -13,7 +13,7 @@ sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 
-class UartHandler():
+class UartHandler(object):
 
     def __init__(self, logger, serial_line='/dev/ttyAMA0',
                  baud_rate=9600, timeout=1):

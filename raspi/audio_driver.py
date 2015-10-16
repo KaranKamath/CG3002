@@ -1,17 +1,18 @@
 import os
 from sys import platform as _platform
 from subprocess import Popen
+from prompts_enum import PromptDirn
 
 BASE_AUDIO_DIR = '/home/pi/cg3002/audio/'
 
 
-class PromptsManager():
+class AudioDriver(object):
 
     PROMPTS = {
-        'left': 'left.wav',
-        'right': 'right.wav',
-        'straight': 'straight.wav',
-        'finish': 'dest_reached.wav'
+        PromptDirn.left: 'left.wav',
+        PromptDirn.right: 'right.wav',
+        PromptDirn.straight: 'straight.wav',
+        PromptDirn.end: 'dest_reached.wav'
     }
     PLAYER = 'afplay' if _platform == 'darwin' else 'aplay'
 
@@ -29,9 +30,9 @@ class PromptsManager():
 
 if __name__ == '__main__':
     from time import sleep
-    obj = PromptsManager()
-    obj.prompt('left')
+    obj = AudioDriver()
+    obj.prompt(PromptDirn.left)
     sleep(0.5)
-    obj.prompt('finish')
+    obj.prompt(PromptDirn.end)
     sleep(1)
-    obj.prompt('right')
+    obj.prompt(PromptDirn.right)
