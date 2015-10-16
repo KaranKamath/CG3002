@@ -52,9 +52,6 @@ class Navigator(object):
                                       self.north)
         self.log.info('Next node %s @[%scm, %sdeg]',
                       self.path[self.next_node_idx], dist, angle)
-        self.generate_prompt(dist, angle)
-
-    def generate_prompt(self, dist, angle):
         if dist < self.DISTANCE_THRESHOLD:
             self.log.info('Reached node %s',
                           self.path[self.next_node_idx])
@@ -62,17 +59,15 @@ class Navigator(object):
             self.log.info('Navigating to node %s',
                           self.path[self.next_node_idx])
             self.navigate_to_next_node()
-        elif abs(angle) < self.ANGLE_THRESHOLD:
-            if dist > 0:
-                self.log.info('Prompting straight')
-                self.prompts.prompt('straight')
-            else:
-                self.prompts.prompt('finish')
+        else:
+            self.generate_prompt(dist, angle)
+
+    def generate_prompt(self, dist, angle):
+        if abs(angle) < self.ANGLE_THRESHOLD:
+            self.prompts.prompt('straight')
         elif angle > 0:
-            self.log.info('Prompting right')
             self.prompts.prompt('right')
         else:
-            self.log.info('Prompting left')
             self.prompts.prompt('left')
 
     def wait_for_origin_and_destination(self):
