@@ -35,6 +35,7 @@ class LocationApproximator(object):
         self.data_buffer = []
         self.step_count = 0
         self.last_batch_steps = 0
+        self.last_batch_headings = []
         self.heading_buffer = []
         self.x = x
         self.y = y
