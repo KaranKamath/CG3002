@@ -52,7 +52,7 @@ class LocationApproximator(object):
 
         if not self.calibrated:
             self.logger.info('Calibrating')
-            self.threshold = sum(self.data_buffer) * 1.0 / len(self.data.buffer)
+            self.threshold = max(self.data_buffer)
             self.logger.info('Threshold set to: %s', str(self.threshold))
             self.calibrated = True
             return
