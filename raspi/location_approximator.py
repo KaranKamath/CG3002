@@ -35,6 +35,7 @@ class LocationApproximator(object):
         self.step_count = 0
         self.last_batch_steps = 0
         self.last_batch_headings = []
+        self.last_batch_data_buffer = []
         self.heading_buffer = []
         self.x = x
         self.y = y
@@ -52,8 +53,9 @@ class LocationApproximator(object):
 
         if not self.calibrated:
             self.logger.info('Calibrating')
-            self.threshold = max(self.data_buffer)
+            self.threshold = sorted(self.data_buffer)[-3]
             self.logger.info('Threshold set to: %s', str(self.threshold))
+            self.copy_and_clear_buffers()
             self.calibrated = True
             return
 
@@ -70,12 +72,10 @@ class LocationApproximator(object):
         self.logger.info('Peak values: %s', accepted_peaks)
 
         self.last_batch_steps = len(accepted_peaks)
-        self.last_batch_headings = self.heading_buffer
-
-        self.heading_buffer = []
-        self.data_buffer = []
         self.step_count = self.step_count + len(accepted_peaks)
 
+        self.copy_and_clear_buffers()
+        
         self.logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
         self.logger.info('Total Steps Counted: %s', str(self.step_count))
 
@@ -94,6 +94,13 @@ class LocationApproximator(object):
 
         self.logger.info('New X: %s', str(self.x))
         self.logger.info('New Y: %s', str(self.y))
+
+    def copy_and_clear_buffers(self):
+        self.last_batch_headings = self.heading_buffer
+        self.heading_buffer = []
+        self.last_batch_data_buffer = self.data_buffer
+        self.data_buffer = []
+
 
     def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
