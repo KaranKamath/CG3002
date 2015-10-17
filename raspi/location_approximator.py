@@ -59,11 +59,11 @@ class LocationApproximator(object):
             self.calibrated = True
             return
 
-        self.logger.info('Flushing values: %s', self.data_buffer)
+        self.logger.info('\nFlushing values: %s', self.data_buffer)
         low_passed_vals = butter_lowpass_filter(
             self.data_buffer, CUTOFF, FS, FILTER_ORDER)
         
-        self.logger.info('Filtered values: %s', low_passed_vals)
+        self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
         peak_vals = [low_passed_vals[x] for x in peak_indices if self.data_buffer[x] > self.threshold]
@@ -76,8 +76,8 @@ class LocationApproximator(object):
 
         self.copy_and_clear_buffers()
         
-        self.logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
-        self.logger.info('Total Steps Counted: %s', str(self.step_count))
+        self.logger.info('\nBatch Steps Counted: %s', str(len(accepted_peaks)))
+        self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
             STEP_LENGTH * 1.0 / len(self.last_batch_headings)
@@ -106,14 +106,14 @@ class LocationApproximator(object):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
-        self.logger.info('Data sent to localizer: %s', fetched_data)
+        #self.logger.info('Data sent to localizer: %s', fetched_data)
 
         fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
                           for datapoint in fetched_data]
 
-        self.logger.info('Incoming Processed Data: %s', fetched_values)
+        #self.logger.info('Incoming Processed Data: %s', fetched_values)
 
-        self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
+        #self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
 
         if len(fetched_values) < 1:
             print "no value"
