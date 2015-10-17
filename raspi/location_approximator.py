@@ -48,9 +48,14 @@ class LocationApproximator(object):
         self.logger.info('Flushing values: %s', self.data_buffer)
         low_passed_vals = butter_lowpass_filter(
             self.data_buffer, CUTOFF, FS, FILTER_ORDER)
+        
+        self.logger.info('Filtered values: %s', low_passed_vals)
+
         peak_indices = signal.argrelmax(low_passed_vals)[0]
         peak_vals = [low_passed_vals[x] for x in peak_indices]
         accepted_peaks = [x for x in peak_vals if x > THRESHOLD_MIN_NORM_VAL]
+
+        self.logger.info('Peak values: %s', accepted_peaks)
 
         self.last_batch_steps = len(accepted_peaks)
         self.last_batch_headings = self.heading_buffer
