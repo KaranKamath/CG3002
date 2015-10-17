@@ -58,7 +58,7 @@ class Navigator(object):
         self._acquire_next_node()
         while not self.navigation_finished:
             self._navigate_to_next_node()
-            time.sleep(3)
+            time.sleep(0.5)
 
     def stop(self):
         self.navigation_finished = True
