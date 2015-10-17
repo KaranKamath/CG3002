@@ -55,6 +55,7 @@ class LocationApproximator(object):
             self.logger.info('Calibrating')
             self.logger.info('Data Buffer: %s', self.data_buffer)
             self.threshold = sorted(self.data_buffer)[-1]
+            self.threshold *= 1.5
             self.logger.info('Threshold set to: %s', str(self.threshold))
             self.copy_and_clear_buffers()
             self.calibrated = True
@@ -110,9 +111,11 @@ class LocationApproximator(object):
 
         #self.logger.info('Data sent to localizer: %s', fetched_data)
 
-        fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
+        #fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
                           for datapoint in fetched_data]
 
+        fetched_values = [abs(datapoint[1])) * 1.0 / 3.0
+                          for datapoint in fetched_data]
         #self.logger.info('Incoming Processed Data: %s', fetched_values)
 
         #self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
