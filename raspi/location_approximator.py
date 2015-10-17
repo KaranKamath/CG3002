@@ -50,7 +50,7 @@ class LocationApproximator(object):
             self.data_buffer, CUTOFF, FS, FILTER_ORDER)
         peak_indices = signal.argrelmax(low_passed_vals)[0]
         peak_vals = [low_passed_vals[x] for x in peak_indices]
-        accepted_peaks = [x for x in peak_vals if x > MIN_NORM_THRESHOLD]
+        accepted_peaks = [x for x in peak_vals if x > THRESHOLD_MIN_NORM_VAL]
 
         self.last_batch_steps = len(accepted_peaks)
         self.last_batch_headings = self.heading_buffer
