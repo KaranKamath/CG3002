@@ -72,8 +72,8 @@ class LocationApproximator(object):
         self.logger.info('Delta X: %s', str(sum(vectorsX)))
         self.logger.info('Delta Y: %s', str(sum(vectorsY)))
 
-        self.x = self.x + int(sum(vectorsX).round())
-        self.y = self.y + int(sum(vectorsY).round())
+        self.x = self.x + round(int(sum(vectorsX)))
+        self.y = self.y + round(int(sum(vectorsY)))
 
         self.logger.info('New X: %s', str(self.x))
         self.logger.info('New Y: %s', str(self.y))
@@ -82,7 +82,7 @@ class LocationApproximator(object):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
-        fetched_values = [(datapoint[1] + datapoint[2] + datapoint[3]) * 1.0 / 3.0
+        fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
                           for datapoint in fetched_data]
 
         self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
