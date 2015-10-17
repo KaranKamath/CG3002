@@ -59,7 +59,7 @@ class LocationApproximator(object):
         self.step_count = self.step_count + len(accepted_peaks)
 
         self.logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
-        self.logger.info('Total Steps Counted: %s', str(self.count))
+        self.logger.info('Total Steps Counted: %s', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
             STEP_LENGTH * 1.0 / len(last_batch_headings)
