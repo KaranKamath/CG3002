@@ -112,7 +112,7 @@ class LocationApproximator(object):
         #self.logger.info('Data sent to localizer: %s', fetched_data)
 
         #fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
-                          for datapoint in fetched_data]
+        #                  for datapoint in fetched_data]
 
         fetched_values = [abs(datapoint[1])) * 1.0 / 3.0
                           for datapoint in fetched_data]
