@@ -30,7 +30,7 @@ sudo service navi start
 sudo service localizer start
 
 cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/* /home/pi/db/*'
-cron_exists=$(sudo crontab -l | grep "$cron_cmd")
+cron_exists=$(sudo crontab -l | grep -F "$cron_cmd")
 if [ $? -eq 1 ]
 then
     echo "Adding Tweet-IP cron..."
@@ -40,7 +40,7 @@ else
 fi
 
 cron_cmd='* * * * * /home/pi/cg3002/wifi_reconnect.sh'
-cron_exists=$(sudo crontab -l | grep "$cron_cmd")
+cron_exists=$(sudo crontab -l | grep -F "$cron_cmd")
 if [ $? -eq 1 ]
 then
     echo "Adding Wifi-Reconnect cron..."
