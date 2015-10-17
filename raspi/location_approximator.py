@@ -53,12 +53,14 @@ class LocationApproximator(object):
 
         if not self.calibrated:
             self.logger.info('Calibrating')
-            self.threshold = sorted(self.data_buffer)[-3]
+            self.logger.info('Data Buffer: %s', self.data_buffer)
+            self.threshold = sorted(self.data_buffer)[-1]
             self.logger.info('Threshold set to: %s', str(self.threshold))
             self.copy_and_clear_buffers()
             self.calibrated = True
             return
 
+        self.logger.info('\nThreshold: %s\n', self.threshold)
         self.logger.info('\nFlushing values: %s', self.data_buffer)
         low_passed_vals = butter_lowpass_filter(
             self.data_buffer, CUTOFF, FS, FILTER_ORDER)
