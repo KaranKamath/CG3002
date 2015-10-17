@@ -44,7 +44,7 @@ class Localizer(object):
     def _get_heading(self, data):
         a = data[1:4]
         m = data[4:7]
-        f = [0, 0, 1]
+        f = [0, 0, -1]
         raw_heading = self._calculate_raw_heading(a, m, f)
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
