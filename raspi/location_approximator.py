@@ -1,6 +1,5 @@
 import time
 import numpy as np
-from enum import Enum
 from db import DB
 from scipy import signal
 from math import radians, cos, sin

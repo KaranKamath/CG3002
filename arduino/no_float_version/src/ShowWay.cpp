@@ -17,9 +17,9 @@ void setup(void) {
 	altitude_init();
 	accemagno_init();
 	gyro_init();
-	setupObstacle();
-	setupKeypad();
-	setupUart();
+	setupObstacle(); 
+//	setupKeypad();
+//	setupUart();
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
 	//TODO: test if the queue is created correctly
 	
@@ -33,9 +33,9 @@ int main(void)
 	
     TaskHandle_t alt, send, ui;
 	
-	xTaskCreate(readDistanceSensors, "UI", 256, NULL, 3, &ui);
-	xTaskCreate(imu, "S", 200, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 200, NULL, 2, &send);
+	xTaskCreate(readDistanceSensors, "UI", 300, NULL, 3, &ui);
+	xTaskCreate(imu, "S", 256, NULL, 2, &alt);
+	xTaskCreate(sendData, "R", 300, NULL, 2, &send);
 	
 	//TODO: test if tasks are created correctly
 	vTaskStartScheduler();

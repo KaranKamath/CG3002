@@ -13,9 +13,9 @@
 #include "NewPing.h"
 
 #define NUM_SONAR 1
-#define TRIGGER_PIN 12
-#define ECHO_PIN 11
-#define MAX_DISTANCE 200
+#define TRIGGER_UP 12
+#define ECHO_UP 11
+#define MAX_DISTANCE 300
 
 #define ITERATIONS 5
 #define OBSTACLE_THRESHOLD 80
