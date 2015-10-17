@@ -106,6 +106,8 @@ class LocationApproximator(object):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
+        self.logger.info('Data sent to localizer: %s', feteched_data)
+
         fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
                           for datapoint in fetched_data]
 
