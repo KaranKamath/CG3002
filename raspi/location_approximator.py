@@ -57,7 +57,7 @@ class LocationApproximator(object):
 
         self.heading_buffer = []
         self.data_buffer = []
-        self.count = self.count + len(accepted_peaks)
+        self.step_count = self.step_count + len(accepted_peaks)
 
         self.logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
         self.logger.info('Total Steps Counted: %s', str(self.count))
