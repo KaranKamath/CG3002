@@ -63,7 +63,7 @@ class LocationApproximator(object):
         self.logger.info('Total Steps Counted: %s', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
-            STEP_LENGTH * 1.0 / len(last_batch_headings)
+            STEP_LENGTH * 1.0 / len(self.last_batch_headings)
         vectorsX = [average_dist * cos(radians(heading))
                     for heading in self.last_batch_headings]
         vectorsY = [average_dist * sin(radians(heading))
