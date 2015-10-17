@@ -109,7 +109,7 @@ class LocationApproximator(object):
         fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
                           for datapoint in fetched_data]
 
-        logger.info('Incoming Processed Data: %s', fetched_values)
+        self.logger.info('Incoming Processed Data: %s', fetched_values)
 
         self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
 
