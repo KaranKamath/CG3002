@@ -5,7 +5,6 @@ from scipy import signal
 from math import radians, cos, sin
 
 STEP_LENGTH = 50  # cm
-THRESHOLD_MIN_NORM_VAL = 0.2
 FILTER_ORDER = 5
 FS = 10  # Sample Rate
 CUTOFF = 1
@@ -40,11 +39,24 @@ class LocationApproximator(object):
         self.x = x
         self.y = y
         self.logger = logger
+        self.calibrated = False
+        self.threshold = None
+
+    def is_calibrated(self):
+        return self.calibrated
 
     def get_step_count(self):
         return self.step_count
 
     def flush(self):
+
+        if not self.calibrated:
+            self.logger.info('Calibrating')
+            self.threshold = sum(self.data_buffer) * 1.0 / len(self.data.buffer)
+            self.logger.info('Threshold set to: %s', str(self.threshold))
+            self.calibrated = True
+            return
+
         self.logger.info('Flushing values: %s', self.data_buffer)
         low_passed_vals = butter_lowpass_filter(
             self.data_buffer, CUTOFF, FS, FILTER_ORDER)
@@ -52,8 +64,8 @@ class LocationApproximator(object):
         self.logger.info('Filtered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
-        peak_vals = [low_passed_vals[x] for x in peak_indices]
-        accepted_peaks = [x for x in peak_vals if x > THRESHOLD_MIN_NORM_VAL]
+        peak_vals = [low_passed_vals[x] for x in peak_indices if self.data_buffer[x] > self.threshold]
+        accepted_peaks = [x for x in peak_vals]
 
         self.logger.info('Peak values: %s', accepted_peaks)
 
