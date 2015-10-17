@@ -1,20 +1,20 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          uart
+# Provides:          navi
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: UART service to talk to Arduino
+# Short-Description: NAVI service
 ### END INIT INFO
 
-DESC="UART service to talk to Arduino"
-NAME=uart
-DAEMON=/home/pi/cg3002/uart.py
+DESC="NAVI service"
+NAME=navi
+DAEMON=/home/pi/cg3002/navigator.py
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
-DAEMON_USER=pi
+DAEMON_USER=root
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh

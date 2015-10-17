@@ -14,7 +14,7 @@ DAEMON=/home/pi/cg3002/localizer.py
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
-DAEMON_USER=pi
+DAEMON_USER=root
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
