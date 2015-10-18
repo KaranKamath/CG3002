@@ -18,7 +18,7 @@ class ObstacleDetector(Object):
 
         fetched_data = sorted(fetched_data, key = lambda x: x[0])
 
-        return [x[2] for x in fetched_data]
+        return [x[2] for x in fetched_data][-1]
 
     def has_crossed_threshold(self, value):
         if value < 100:
@@ -26,7 +26,6 @@ class ObstacleDetector(Object):
         return False
  
     def get_obstacle_map(self, vals):
-        #TODO Fix this to take in a list of lists
         obstacle_map = {}
 
         obstacle_map['up'] = has_crossed_threshold(vals[0])
