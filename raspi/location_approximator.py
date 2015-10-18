@@ -5,12 +5,13 @@ from scipy import signal
 from math import radians, cos, sin
 
 STEP_LENGTH = 50  # cm
-FILTER_ORDER = 5
-FS = 10  # Sample Rate
+FILTER_ORDER = 3
+FS = 5  # Sample Rate
 CUTOFF = 1
 ACC_MAX_VAL = (32768 * 2) - 1
 ACC_NEG_RANGE = 32767
-
+GYRO_MAX = 32768
+THRESHOLD_GYRO = 0.05
 
 def butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
@@ -42,7 +43,7 @@ class LocationApproximator(object):
         self.y = y
         self.logger = logger
         self.calibrated = False
-        self.threshold = None
+        self.threshold = THRESHOLD_GYRO
 
     def is_calibrated(self):
         return self.calibrated
@@ -52,20 +53,23 @@ class LocationApproximator(object):
 
     def flush(self):
 
-        if not self.calibrated:
-            self.logger.info('Calibrating')
-            self.logger.info('Data Buffer: %s', self.data_buffer)
-            self.threshold = sorted(self.data_buffer)[-1]
-            self.threshold *= 1.1
-            self.logger.info('Threshold set to: %s', str(self.threshold))
-            self.copy_and_clear_buffers()
-            self.calibrated = True
-            return
+        #if not self.calibrated:
+        #    self.logger.info('Calibrating')
+        #    self.logger.info('Data Buffer: %s', self.data_buffer)
+        #    self.threshold = sorted(self.data_buffer)[-1]
+        #    self.threshold *= 1.1
+        #    self.logger.info('Threshold set to: %s', str(self.threshold))
+        #    self.copy_and_clear_buffers()
+        #    self.calibrated = True
+        #    return
 
         self.logger.info('\nThreshold: %s\n', self.threshold)
         self.logger.info('\nFlushing values: %s', self.data_buffer)
+
+        cumulative_buffer = self.last_batch_data_buffer + self.data_buffer
+
         low_passed_vals = butter_lowpass_filter(
-            self.data_buffer, CUTOFF, FS, FILTER_ORDER)
+            cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
         
         self.logger.info('\nFiltered values: %s', low_passed_vals)
 
@@ -76,12 +80,12 @@ class LocationApproximator(object):
 
         self.logger.info('Peak values: %s', accepted_peaks)
 
-        self.last_batch_steps = len(accepted_peaks)
-        self.step_count = self.step_count + len(accepted_peaks)
+        self.last_batch_steps = (len(accepted_peaks) * 2) - self.last_batch_steps
+        self.step_count = self.step_count + self.last_batch_steps
 
         self.copy_and_clear_buffers()
         
-        self.logger.info('\nBatch Steps Counted: %s', str(len(accepted_peaks)))
+        self.logger.info('\nBatch Steps Counted: %s', str(self.last_batch_steps))
         self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
@@ -116,8 +120,7 @@ class LocationApproximator(object):
         #fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
         #                  for datapoint in fetched_data]
 
-        fetched_values = [(ACC_NEG_RANGE + datapoint[1]) * 1.0 / 3.0 for datapoint in fetched_data]
-
+        fetched_values = [datapoint[-2] for datapoint in fetched_data]
         #self.logger.info('Incoming Processed Data: %s', fetched_values)
 
         #self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
@@ -126,7 +129,7 @@ class LocationApproximator(object):
             print "no value"
             return
 
-        normalized_vals = [v * 1.0 / ACC_MAX_VAL for v in fetched_values]
+        normalized_vals = [v * 1.0 / GYRO_MAX for v in fetched_values]
 
         self.data_buffer.extend(normalized_vals)
         self.heading_buffer.append(heading)
