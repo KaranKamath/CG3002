@@ -24,7 +24,7 @@ class Localizer(object):
     }
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
-    coords_delay = 4
+    coords_delay = 6
     coords_offset = 0
 
     def __init__(self, logger, init_x=0, init_y=0):
