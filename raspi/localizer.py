@@ -47,7 +47,7 @@ class Localizer(object):
         a = data[1:4]
         m = data[4:7]
         f = [0, 0, -1]
-        raw_heading = self._calculate_raw_heading(a, m, f)
+        raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
         raw_heading = convert_heading_to_horizontal_axis(raw_heading,
                                                          self.map_north)
         return self._filter_heading(raw_heading)
