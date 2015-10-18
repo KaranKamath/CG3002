@@ -26,6 +26,8 @@ class Localizer(object):
     mag_max = [-32768, -32768, -32768]
     coords_delay = 6
     coords_offset = 0
+    prev_known_heading = None
+    heading_filter_threshold = 30
 
     def __init__(self, logger, init_x=0, init_y=0):
         self.db = DB()
@@ -46,8 +48,9 @@ class Localizer(object):
         m = data[4:7]
         f = [0, 0, -1]
         raw_heading = self._calculate_raw_heading(a, m, f)
-        return convert_heading_to_horizontal_axis(raw_heading,
-                                                  self.map_north)
+        raw_heading = convert_heading_to_horizontal_axis(raw_heading,
+                                                         self.map_north)
+        return self._filter_heading(raw_heading)
 
     def _calculate_raw_heading(self, a, m, f):
         m = (m[0] - (self.mag_min[0] + self.mag_max[0]) / 2,
@@ -57,6 +60,18 @@ class Localizer(object):
         n = normalize_3d(cross_3d(a, e))
         heading = atan2(dot_3d(e, f), dot_3d(n, f)) * 180 / pi
         return (heading + 360) if heading < 0 else heading
+
+    def _filter_heading(self, heading):
+        if self.prev_known_heading is None:
+            self.prev_known_heading = heading
+            return heading
+
+        heading_diff = abs(self.prev_known_heading - heading)
+        if heading_diff < self.heading_filter_threshold:
+            self.prev_known_heading = heading
+            return heading
+        else:
+            return self.prev_known_heading
 
     def _get_coords(self, data, heading):
         self.loc_approx.append_to_buffers(data, heading)
