@@ -75,13 +75,16 @@ class LocationApproximator(object):
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
         self.logger.info('\nPeak Indices: %s\n', peak_indices)
-        peak_vals = [low_passed_vals[x] for x in peak_indices if self.data_buffer[x] > self.threshold]
+        peak_vals = [low_passed_vals[x] for x in peak_indices if low_passed_vals[x] > self.threshold]
         accepted_peaks = [x for x in peak_vals]
 
         self.logger.info('Peak values: %s', accepted_peaks)
 
-        self.last_batch_steps = (len(accepted_peaks) * 2) - self.last_batch_steps
-        self.step_count = self.step_count + self.last_batch_steps
+        if (len(accepted_peaks) * 2) > self.last_batch_steps:
+            self.last_batch_steps = (len(accepted_peaks) * 2) - self.last_batch_steps
+            self.step_count = self.step_count + self.last_batch_steps
+        else:
+            self.last_batch_steps = 0
 
         self.copy_and_clear_buffers()
         
