@@ -8,7 +8,8 @@ STEP_LENGTH = 50  # cm
 FILTER_ORDER = 5
 FS = 10  # Sample Rate
 CUTOFF = 1
-ACC_MAX_VAL = 32768
+ACC_MAX_VAL = (32768 * 2) - 1
+ACC_NEG_RANGE = 32767
 
 
 def butter_lowpass(cutoff, fs, order=5):
@@ -55,7 +56,7 @@ class LocationApproximator(object):
             self.logger.info('Calibrating')
             self.logger.info('Data Buffer: %s', self.data_buffer)
             self.threshold = sorted(self.data_buffer)[-1]
-            self.threshold *= 1.5
+            self.threshold *= 1.1
             self.logger.info('Threshold set to: %s', str(self.threshold))
             self.copy_and_clear_buffers()
             self.calibrated = True
@@ -69,6 +70,7 @@ class LocationApproximator(object):
         self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
+        self.logger.info('\nPeak Indices: %s\n', peak_indices)
         peak_vals = [low_passed_vals[x] for x in peak_indices if self.data_buffer[x] > self.threshold]
         accepted_peaks = [x for x in peak_vals]
 
@@ -89,14 +91,14 @@ class LocationApproximator(object):
         vectorsY = [average_dist * sin(radians(heading))
                     for heading in self.last_batch_headings]
 
-        self.logger.info('Delta X: %s', str(sum(vectorsX)))
-        self.logger.info('Delta Y: %s', str(sum(vectorsY)))
+#        self.logger.info('Delta X: %s', str(sum(vectorsX)))
+#        self.logger.info('Delta Y: %s', str(sum(vectorsY)))
 
         self.x = self.x + round(int(sum(vectorsX)))
         self.y = self.y + round(int(sum(vectorsY)))
 
-        self.logger.info('New X: %s', str(self.x))
-        self.logger.info('New Y: %s', str(self.y))
+#        self.logger.info('New X: %s', str(self.x))
+#        self.logger.info('New Y: %s', str(self.y))
 
     def copy_and_clear_buffers(self):
         self.last_batch_headings = self.heading_buffer
@@ -114,8 +116,8 @@ class LocationApproximator(object):
         #fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
         #                  for datapoint in fetched_data]
 
-        fetched_values = [abs(datapoint[1])) * 1.0 / 3.0
-                          for datapoint in fetched_data]
+        fetched_values = [(ACC_NEG_RANGE + datapoint[1]) * 1.0 / 3.0 for datapoint in fetched_data]
+
         #self.logger.info('Incoming Processed Data: %s', fetched_values)
 
         #self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
