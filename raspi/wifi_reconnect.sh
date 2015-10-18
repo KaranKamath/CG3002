@@ -5,8 +5,7 @@ function log {
     echo "echo $(date '+%Y-%m-%d %H:%M:%S') $1" >> /home/pi/logs/wifi_reconnect.log
 }
 
-# 8.8.8.8 is a public Google DNS server
-SERVER=8.8.8.8
+SERVER=$(netstat -nr | awk '$1 == "0.0.0.0"{print$2}')
 
 # Only send two pings, sending output to /dev/null
 ping -c2 ${SERVER} > /dev/null
