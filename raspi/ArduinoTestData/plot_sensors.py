@@ -23,11 +23,6 @@ from scipy import signal
 #normalizedVals = [ v * 1.0 / maxVal for v in y]
 
 normalizedVals = [v[-2] * 1.0 / 32768 for v in sensordata]
-
-plot('normed', normalizedVals)
-plt.show()
-
-
 def butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
@@ -47,18 +42,39 @@ fs = 5.0       # sample rate, Hz
 cutoff = 1 
 #min_value_threshold = 0.2
 
-avgVal = reduce(lambda x,y: x + y, normalizedVals) * 1.0 / len(normalizedVals)
-lowPassed = butter_lowpass_filter(normalizedVals, cutoff, fs, order)
-print 'lowpassed', lowPassed
-plot('lp', lowPassed)
+def analyze(normalizedVals):
+    lowPassed = butter_lowpass_filter(normalizedVals, cutoff, fs, order)
+    print 'lowpassed', lowPassed
+    plot('lp', lowPassed)
+    plt.show()
+    
+    peaks = signal.argrelmax(lowPassed)
+    print 'peaks', peaks
+    peakVals = [lowPassed[x] for x in peaks[0]]
+    accepted_peaks = [lowPassed[x] for x in peaks[0] if lowPassed[x] > 0.05]
+    print 'initial peaks', peakVals
+    print 'accepted peaks', accepted_peaks
+    print len(accepted_peaks)
+    print '\n'
+
+sampleVals = normalizedVals[30:90]
+
+plot('sample', sampleVals)
 plt.show()
 
-peaks = signal.argrelmax(lowPassed)
-print 'peaks', peaks
-peakVals = [lowPassed[x] for x in peaks[0]]
-accepted_peaks = [lowPassed[x] for x in peaks[0] if lowPassed[x] > 0.05]
-print 'initial peaks', peakVals
-print 'accepted peaks', accepted_peaks
-print 'average', avgVal
-print len(accepted_peaks)
+analyze(sampleVals)
+
+batchOne = normalizedVals[30:60]
+
+plot('normed batch 1', batchOne)
+plt.show()
+
+
+analyze(batchOne)
+
+batchTwo = normalizedVals[60:90]
+plot('normed batch 2', batchTwo)
+plt.show()
+
+analyze(batchTwo)
 
