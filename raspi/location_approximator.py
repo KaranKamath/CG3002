@@ -11,7 +11,8 @@ CUTOFF = 1
 ACC_MAX_VAL = (32768 * 2) - 1
 ACC_NEG_RANGE = 32767
 GYRO_MAX = 32768
-THRESHOLD_GYRO = 0.05
+THRESHOLD_GYRO = 0.03
+
 
 def butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
@@ -53,7 +54,7 @@ class LocationApproximator(object):
 
     def flush(self):
 
-        #if not self.calibrated:
+        # if not self.calibrated:
         #    self.logger.info('Calibrating')
         #    self.logger.info('Data Buffer: %s', self.data_buffer)
         #    self.threshold = sorted(self.data_buffer)[-1]
@@ -70,7 +71,7 @@ class LocationApproximator(object):
 
         low_passed_vals = butter_lowpass_filter(
             cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
-        
+
         self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
@@ -81,7 +82,8 @@ class LocationApproximator(object):
         self.logger.info('Peak values: %s', accepted_peaks)
 
         if (len(accepted_peaks) * 2) > self.last_batch_steps:
-            self.last_batch_steps = (len(accepted_peaks) * 2) - self.last_batch_steps
+            self.last_batch_steps = (
+                len(accepted_peaks) * 2) - self.last_batch_steps
             self.step_count = self.step_count + self.last_batch_steps
         else:
             self.last_batch_steps = 0
@@ -113,14 +115,13 @@ class LocationApproximator(object):
         self.last_batch_data_buffer = self.data_buffer
         self.data_buffer = []
 
-
     def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
         #self.logger.info('Data sent to localizer: %s', fetched_data)
 
-        #fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
+        # fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
         #                  for datapoint in fetched_data]
 
         fetched_values = [datapoint[-2] for datapoint in fetched_data]
