@@ -64,7 +64,7 @@ class LocationApproximator(object):
         #    return
 
         self.logger.info('\nThreshold: %s\n', self.threshold)
-        self.logger.info('\nFlushing values: %s', self.data_buffer)
+#        self.logger.info('\nFlushing values: %s', self.data_buffer)
 
         cumulative_buffer = self.last_batch_data_buffer + self.data_buffer
 
@@ -74,7 +74,7 @@ class LocationApproximator(object):
         self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
-        self.logger.info('\nPeak Indices: %s\n', peak_indices)
+#        self.logger.info('\nPeak Indices: %s\n', peak_indices)
         peak_vals = [low_passed_vals[x] for x in peak_indices if low_passed_vals[x] > self.threshold]
         accepted_peaks = [x for x in peak_vals]
 
@@ -88,7 +88,7 @@ class LocationApproximator(object):
 
         self.copy_and_clear_buffers()
         
-        self.logger.info('\nBatch Steps Counted: %s', str(self.last_batch_steps))
+        self.logger.info('Batch Steps Counted: %s', str(self.last_batch_steps))
         self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
