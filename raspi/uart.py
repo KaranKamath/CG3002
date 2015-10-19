@@ -6,6 +6,7 @@ import time
 import serial
 from db import DB
 from utils import CommonLogger, init_logger
+from audio_driver import AudioDriver
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
 logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
@@ -20,12 +21,14 @@ class UartHandler(object):
         self.ser = serial.Serial(serial_line, baud_rate, timeout=timeout)
         self.logger = logger
         self.db = DB()
+        self.audio = AudioDriver()
         self.logger.info('Opening serial line')
 
     def _serial_read_line(self):
         return self.ser.readline().strip()
 
     def _wait_for_begin(self):
+        self.audio.prompt_begin()
         while True:
             if self._serial_read_line() == 'BEGIN':
                 self.logger.info('Got BEGIN')
@@ -58,6 +61,7 @@ class UartHandler(object):
 
     def read_origin_and_destination(self):
         self.logger.info('Waiting for origin and destination...')
+        self.audio.prompt_enter_info()
         _input = self._serial_read_line()
         while not _input:
             _input = self._serial_read_line()

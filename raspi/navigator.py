@@ -22,7 +22,7 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Navigator(object):
 
-    ANGLE_THRESHOLD = 10
+    ANGLE_THRESHOLD = 15
     DISTANCE_THRESHOLD = 100
 
     def __init__(self, logger):
@@ -111,6 +111,7 @@ class Navigator(object):
         self.log.info('Next node %s @[%scm, %sdeg]', self.next_node_id,
                       dist, angle)
         if dist < self.DISTANCE_THRESHOLD:
+            self.audio.prompt_node_reached(self.next_node_id)
             self.log.info('Reached node %s', self.next_node_id)
             self.next_node_idx += 1
             if self.next_node_idx == len(self.path):
@@ -131,7 +132,12 @@ class Navigator(object):
 
     def _generate_prompt(self, angle):
         if abs(angle) < self.ANGLE_THRESHOLD:
-            new_prompt = PromptDirn.straight
+            if self.current_prompt is None or \
+                    self.current_prompt == PromptDirn.left and angle <= 0 or \
+                    self.current_prompt == PromptDirn.right and angle >= 0:
+                new_prompt = PromptDirn.straight
+            else:
+                new_prompt = self.current_prompt
         elif angle > 0:
             new_prompt = PromptDirn.left
         else:

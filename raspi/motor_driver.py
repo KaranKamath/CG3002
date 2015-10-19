@@ -30,5 +30,8 @@ class MotorDriver(object):
             self._right_motor(True)
 
 if __name__ == '__main__':
+    import time
     f = MotorDriver()
     f._left_motor(True)
+    time.sleep(5)
+    f._left_motor(False)
