@@ -1,13 +1,15 @@
 import time
 from db import DB
 
-DELTA_TIME = 1000 # 1 second
+DELTA_TIME = 1000  # 1 second
 
-class ObstacleDetector(Object):
 
-    def __init__(self):
+class ObstacleDetector(object):
+
+    def __init__(self, db, logger):
         self.past_maps = []
-        self.db = DB()
+        self.db = db
+        self.logger = logger
 
     def get_current_data(self):
         one_second_ago = int(round(time.time() * 1000) - DELTA_TIME)
@@ -16,7 +18,7 @@ class ObstacleDetector(Object):
         if not fetched_data:
             return []
 
-        fetched_data = sorted(fetched_data, key = lambda x: x[0])
+        fetched_data = sorted(fetched_data, key=lambda x: x[0])
 
         return [x[2] for x in fetched_data][-1]
 
@@ -24,7 +26,7 @@ class ObstacleDetector(Object):
         if value < 100:
             return True
         return False
- 
+
     def get_obstacle_map(self, vals):
         obstacle_map = {}
 
@@ -45,7 +47,7 @@ class ObstacleDetector(Object):
             return 180 + (180 + raw_final_angle)
 
         return raw_final_angle
-         
+
     def recommend(self, current_angle_recommendation, ):
         obstacle_map = self.get_obstacle_map(self.get_current_data())
 
@@ -60,6 +62,3 @@ class ObstacleDetector(Object):
 
         else:
             return self.turn(current_angle_recommendation, -90)
-
-            
-

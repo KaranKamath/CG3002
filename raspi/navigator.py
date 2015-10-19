@@ -11,6 +11,7 @@ from prompts_enum import PromptDirn
 from directions_utils import normalize
 from audio_driver import AudioDriver
 from motor_driver import MotorDriver
+from obstacle_detection import ObstacleDetector
 from utils import CommonLogger, dijkstra, euclidean_dist, init_logger
 
 
@@ -32,6 +33,7 @@ class Navigator(object):
         self.maps = MapsRepo()
         self.audio = AudioDriver()
         self.motors = MotorDriver()
+        self.obstacle_detector = ObstacleDetector(self.db, self.log)
         self.current_prompt = None
         self.navigation_finished = False
 
