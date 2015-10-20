@@ -12,6 +12,8 @@ THRESHOLD_STRAIGHT_LEFT = 20
 THRESHOLD_STRAIGHT_RIGHT = -20
 THRESHOLD_LEFT = 150
 THRESHOLD_RIGHT = -150
+THRESHOLD_MID_LEFT = 90
+THRESHOLD_MID_RIGHT = -90
 
 class ObstacleDetector(object):
 
@@ -94,15 +96,14 @@ class ObstacleDetector(object):
         if obstacle_map['up'] and obstacle_map['right']:
             return AROUND_LEFT
 
-        # Obstacle right and left, but not straight
-        if obstacle_map['right']:
-            return STRAIGHT
-
         # Obstacle up front and left
         if obstacle_map['up']:
             return RIGHT
 
-        # Obstacle only on the left
+        # Obstacle right and left, but not straight, or just the left
+        if current_angle_recommendation >= THRESHOLD_MID_LEFT:
+            return AROUND_LEFT
+        
         return STRAIGHT
         
      def apply_right_turn_policy(self, current_angle_recommendation, obstacle_map)
@@ -114,15 +115,14 @@ class ObstacleDetector(object):
         if obstacle_map['up'] and obstacle_map['left']:
             return AROUND_RIGHT
 
-        # Obstacle left and right, but not straight
-        if obstacle_map['left']:
-            return STRAIGHT
-
         # Obstacle up front and right, but not left
         if obstacle_map['up']:
             return LEFT
 
-        # Obstacle only on the right
+        # Obstacle left and right, but not straight, or just the right
+        if current_angle_recommendation <= THRESHOLD_MID_RIGHT:
+            return AROUND_RIGHT
+
         return STRAIGHT
 
     def apply_turn_around_policy(self, current_angle_recommendation, obstacle_map):
