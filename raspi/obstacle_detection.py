@@ -2,11 +2,20 @@ import time
 from db import DB
 
 DELTA_TIME = 1000 # 1 second
+LEFT = 90
+RIGHT = -90
+AROUND_LEFT = 180
+AROUND_RIGHT = -180
+STRAIGHT = 0
+
+THRESHOLD_STRAIGHT_LEFT = 20
+THRESHOLD_STRAIGHT_RIGHT = -20
+THRESHOLD_LEFT = 150
+THRESHOLD_RIGHT = -150
 
 class ObstacleDetector(Object):
 
     def __init__(self):
-        self.past_maps = []
         self.db = DB()
 
     def get_current_data(self):
@@ -45,21 +54,83 @@ class ObstacleDetector(Object):
             return 180 + (180 + raw_final_angle)
 
         return raw_final_angle
-         
-    def recommend(self, current_angle_recommendation, ):
-        obstacle_map = self.get_obstacle_map(self.get_current_data())
-
+    
+    def apply_straight_policy(self, current_angle_recommendation, obstacle_map):
+        # No obstacle in front
         if not obstacle_map['up']:
             return current_angle_recommendation
 
+        # Obstacles all around
         if obstacle_map['left'] and obstacle_map['right']:
-            return self.turn(current_angle_recommendation, 180)
+            return AROUND_LEFT
+         
+        # Obstacle on the front and left but not right
+        if obstacle_map['left']
+            return RIGHT
 
-        elif obstacle_map['left']:
-            return self.turn(current_angle_recommendation, 90)
+        # Obstacle on the front and right but not left
+        if obstacle_map['right']
+            return LEFT
+    
+        # No obstacles on the side, but on the front
+        if current_angle_recommendation >= 0:
+            return LEFT
+        return RIGHT
 
-        else:
-            return self.turn(current_angle_recommendation, -90)
+    def apply_left_turn_policy(self, current_angle_recommendation, obstacle_map)
+        # No obstacle on the left
+        if not obstacle_map['left']:
+            return current_angle_recommendation
 
-            
+        # Obstacles all around
+        if obstacle_map['up'] and obstacle_map['right']:
+            return AROUND_LEFT
+
+        # Obstacle right and left, but not straight
+        if obstacle_map['right']:
+            return STRAIGHT
+
+        # Obstacle up front and left
+        if obstacle_map['up']:
+            return RIGHT
+
+        # Obstacle only on the left
+        return STRAIGHT
+        
+     def apply_right_turn_policy(self, current_angle_recommendation, obstacle_map)
+        # No obstacle on the right
+        if not obstacle_map['right']:
+            return current_angle_recommendation
+
+        # Obstacles all around
+        if obstacle_map['up'] and obstacle_map['left']:
+            return AROUND_RIGHT
+
+        # Obstacle left and right, but not straight
+        if obstacle_map['left']:
+            return STRAIGHT
+
+        # Obstacle up front and right, but not left
+        if obstacle_map['up']:
+            return LEFT
+
+        # Obstacle only on the right
+        return STRAIGHT
+
+    def apply_turn_around_policy(self, current_angle_recommendation, obstacle_map):
+        if current_angle_recommendation >= 0:
+            return AROUND_LEFT
+        return AROUND_RIGHT
+    
+    def recommend(self, current_angle_recommendation):
+        obstacle_map = self.get_obstacle_map(self.get_current_data())
+
+        if THRESHOLD_STRAIGHT_RIGHT <= current_angle_recommendation <= THRESHOLD_STRAIGHT_LEFT:
+            return self.apply_straight_policy(current_angle_recommendation, obstacle_map)
+        elif THRESHOLD_RIGHT <= current_angle_recommendation < THRESHOLD_STRAIGHT_RIGHT:
+            return self.apply_right_turn_policy(current_angle_recommendation, obstacle_map)
+        elif THRESHOLD_STRAIGHT_LEFT < current_angle_recommendation <= THRESHOLD_LEFT:
+            return self.apply_left_turn_policy(current_angle_recommendation, obstacle_map)
+        
+        return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
 
