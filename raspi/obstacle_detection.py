@@ -13,10 +13,12 @@ THRESHOLD_STRAIGHT_RIGHT = -20
 THRESHOLD_LEFT = 150
 THRESHOLD_RIGHT = -150
 
-class ObstacleDetector(Object):
+class ObstacleDetector(object):
 
-    def __init__(self):
-        self.db = DB()
+    def __init__(self, db, logger):
+        self.past_maps = []
+        self.db = db
+        self.logger = logger
 
     def get_current_data(self):
         one_second_ago = int(round(time.time() * 1000) - DELTA_TIME)
@@ -25,15 +27,19 @@ class ObstacleDetector(Object):
         if not fetched_data:
             return []
 
-        fetched_data = sorted(fetched_data, key = lambda x: x[0])
+        fetched_data = sorted(fetched_data, key=lambda x: x[0])
 
-        return [x[2] for x in fetched_data][-1]
+        latest_data = [x[2] for x in fetched_data][-1]
+        
+        self.logger.info('Selecting latest data: %s', latest_data)
+
+        return latest_data
 
     def has_crossed_threshold(self, value):
         if value < 100:
             return True
         return False
- 
+
     def get_obstacle_map(self, vals):
         obstacle_map = {}
 
@@ -41,6 +47,8 @@ class ObstacleDetector(Object):
         obstacle_map['left'] = has_crossed_threshold(vals[1])
         obstacle_map['right'] = has_crossed_threshold(vals[2])
         obstacle_map['bottom'] = has_crossed_threshold(vals[3])
+
+        self.logger.info('Obstacle map: %s', obstacle_map)
 
         return obstacle_map
 
@@ -125,12 +133,19 @@ class ObstacleDetector(Object):
     def recommend(self, current_angle_recommendation):
         obstacle_map = self.get_obstacle_map(self.get_current_data())
 
+        self.logger.info('Angle to modify: %s', current_angle_recommendation)
+
         if THRESHOLD_STRAIGHT_RIGHT <= current_angle_recommendation <= THRESHOLD_STRAIGHT_LEFT:
+            self.logger.info('Applying straight policy...')
             return self.apply_straight_policy(current_angle_recommendation, obstacle_map)
         elif THRESHOLD_RIGHT <= current_angle_recommendation < THRESHOLD_STRAIGHT_RIGHT:
+            self.logger.info('Applying right policy...')
             return self.apply_right_turn_policy(current_angle_recommendation, obstacle_map)
         elif THRESHOLD_STRAIGHT_LEFT < current_angle_recommendation <= THRESHOLD_LEFT:
+            self.logger.info('Applying left policy...')
             return self.apply_left_turn_policy(current_angle_recommendation, obstacle_map)
         
+        self.logger.info('Applying turn around policy...')
+
         return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
 

@@ -34,6 +34,14 @@ class AudioDriver(object):
             args.append(BASE_AUDIO_DIR + digit + '.wav')
         call(args, stdout=self.devnull, stderr=self.devnull)
 
+    def prompt_enter_info(self):
+        call([self.PLAYER, BASE_AUDIO_DIR + 'enter_info.wav'],
+             stdout=self.devnull, stderr=self.devnull)
+
+    def prompt_begin(self):
+        call([self.PLAYER, BASE_AUDIO_DIR + 'begin.wav'],
+             stdout=self.devnull, stderr=self.devnull)
+
 if __name__ == '__main__':
     from time import sleep
     obj = AudioDriver()

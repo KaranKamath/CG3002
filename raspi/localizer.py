@@ -24,10 +24,10 @@ class Localizer(object):
     }
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
-    coords_delay = 6
+    coords_delay = 4
     coords_offset = 0
     prev_known_heading = None
-    heading_filter_threshold = 30
+    heading_alpha = 0.25
 
     def __init__(self, logger, init_x=0, init_y=0):
         self.db = DB()
@@ -44,12 +44,15 @@ class Localizer(object):
         return data[0] / 1000
 
     def _get_heading(self, data):
-        a = data[1:4]
+        # a = data[1:4]
+        a = [-16100, 1300, 500]
         m = data[4:7]
         f = [0, 0, -1]
         raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
+        self.log.info('Raw %s', raw_heading)
         raw_heading = convert_heading_to_horizontal_axis(raw_heading,
                                                          self.map_north)
+        self.log.info('Converted %s', raw_heading)
         return self._filter_heading(raw_heading)
 
     def _calculate_raw_heading(self, a, m, f):
@@ -64,14 +67,11 @@ class Localizer(object):
     def _filter_heading(self, heading):
         if self.prev_known_heading is None:
             self.prev_known_heading = heading
-            return heading
-
-        heading_diff = abs(self.prev_known_heading - heading)
-        if heading_diff < self.heading_filter_threshold:
-            self.prev_known_heading = heading
-            return heading
         else:
-            return self.prev_known_heading
+            heading_diff = heading - self.prev_known_heading
+            self.prev_known_heading = self.prev_known_heading + \
+                self.heading_alpha * heading_diff
+        return self.prev_known_heading
 
     def _get_coords(self, data, heading):
         self.loc_approx.append_to_buffers(data, heading)
@@ -122,7 +122,7 @@ class Localizer(object):
         while True:
             data = self._get_latest_readings()
             self._process_imu(data[0])
-            time.sleep(0.5)
+            time.sleep(0.2)
 
 
 generator = Localizer(logger)
