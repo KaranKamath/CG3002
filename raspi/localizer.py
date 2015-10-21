@@ -29,9 +29,6 @@ class Localizer(object):
     def __init__(self, logger, init_x=0, init_y=0):
         self.db = DB()
         self.log = logger
-        timestamp = int(round(time.time() * 1000))
-        for device in self.device_timestamps:
-            self.device_timestamps[device] = timestamp
 
     def _get_altitude(self, data):
         return data[0] / 1000
