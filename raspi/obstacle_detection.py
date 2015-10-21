@@ -1,6 +1,7 @@
 import time
-from db import DB
 import logging
+from scipy.signal import medfilt
+from db import DB
 
 DELTA_TIME = 1000 # 1 second
 LEFT = 90
@@ -16,10 +17,12 @@ THRESHOLD_RIGHT = -135
 THRESHOLD_MID_LEFT = 90
 THRESHOLD_MID_RIGHT = -90
 
+MEDIAN_WINDOW = 5
+
 class ObstacleDetector(object):
 
     def __init__(self, db, logger):
-        self.past_maps = []
+        self.past_vals = []
         self.db = db
         self.logger = logger
 
@@ -34,10 +37,26 @@ class ObstacleDetector(object):
         fetched_data = sorted(fetched_data, key=lambda x: x[0])
 
         latest_data = [x[2] for x in fetched_data][-1]
-        
+         
+        self.past_vals.append(latest_data)
+
+        if len(self.past_vals) > MEDIAN_WINDOW:
+            self.past_vals = self.past_vals[(-1 * MEDIAN_WINDOW):]
+        else:
+            self.logger.info('Not enough data to filter, returning raw: %s', latest_data)
+            return latest_data
+       
         self.logger.info('Selecting latest data: %s', latest_data)
 
-        return latest_data
+        filtered_vals = []
+        filtered_vals[0] = medfilt([x[0] for x in self.past_vals], MEDIAN_WINDOW)[2]
+        filtered_vals[1] = medfilt([x[1] for x in self.past_vals], MEDIAN_WINDOW)[2]
+        filtered_vals[2] = medfilt([x[2] for x in self.past_vals], MEDIAN_WINDOW)[2]
+        filtered_vals[3] = medfilt([x[3] for x in self.past_vals], MEDIAN_WINDOW)[2]
+
+        self.logger.info('Filtered Values: %s', filtered_vals)
+
+        return filtered_vals
 
     def has_crossed_threshold(self, value):
         if 0 < value < 100:
