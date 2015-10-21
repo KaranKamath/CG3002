@@ -45,7 +45,7 @@ class ObstacleDetector(object):
         return False
 
     def get_obstacle_map(self, vals):
-        if vals is []:
+        if len(vals) == 0:
             self.logger.info('Cannot create map due to data missing')
             return None
 
