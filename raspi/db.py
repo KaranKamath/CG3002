@@ -5,7 +5,7 @@ import time
 
 class DB(object):
     data_to_insert = []
-    batch_size = 5
+    batch_size = 1
 
     def __init__(self, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
@@ -120,16 +120,16 @@ class DB(object):
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
 
-    def fetch_location(self, timestamp=-1, blocking=False):
+    def fetch_location(self, blocking=False):
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         self._open_conn()
         data = list(self.conn.execute(query))
         self._close_conn()
         if not blocking:
-            return data[0] if data and data[0][1] != timestamp else None
+            return data[0] if data else None
 
         self._open_conn()
-        while not (data and data[0][1] != timestamp):
+        while not data:
             time.sleep(0.1)
             data = list(self.conn.execute(query))
         self._close_conn()

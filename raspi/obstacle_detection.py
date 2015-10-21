@@ -1,5 +1,6 @@
 import time
 from db import DB
+import logging
 
 DELTA_TIME = 1000 # 1 second
 LEFT = 90
@@ -45,10 +46,10 @@ class ObstacleDetector(object):
     def get_obstacle_map(self, vals):
         obstacle_map = {}
 
-        obstacle_map['up'] = has_crossed_threshold(vals[0])
-        obstacle_map['left'] = has_crossed_threshold(vals[1])
-        obstacle_map['right'] = has_crossed_threshold(vals[2])
-        obstacle_map['bottom'] = has_crossed_threshold(vals[3])
+        obstacle_map['up'] = self.has_crossed_threshold(vals[0])
+        obstacle_map['left'] = self.has_crossed_threshold(vals[1])
+        obstacle_map['right'] = self.has_crossed_threshold(vals[2])
+        obstacle_map['bottom'] = self.has_crossed_threshold(vals[3])
 
         self.logger.info('Obstacle map: %s', obstacle_map)
 
@@ -75,11 +76,11 @@ class ObstacleDetector(object):
             return AROUND_LEFT
          
         # Obstacle on the front and left but not right
-        if obstacle_map['left']
+        if obstacle_map['left']:
             return RIGHT
 
         # Obstacle on the front and right but not left
-        if obstacle_map['right']
+        if obstacle_map['right']:
             return LEFT
     
         # No obstacles on the side, but on the front
@@ -87,7 +88,7 @@ class ObstacleDetector(object):
             return LEFT
         return RIGHT
 
-    def apply_left_turn_policy(self, current_angle_recommendation, obstacle_map)
+    def apply_left_turn_policy(self, current_angle_recommendation, obstacle_map):
         # No obstacle on the left
         if not obstacle_map['left']:
             return current_angle_recommendation
@@ -106,7 +107,7 @@ class ObstacleDetector(object):
         
         return STRAIGHT
         
-     def apply_right_turn_policy(self, current_angle_recommendation, obstacle_map)
+    def apply_right_turn_policy(self, current_angle_recommendation, obstacle_map):
         # No obstacle on the right
         if not obstacle_map['right']:
             return current_angle_recommendation
@@ -148,4 +149,7 @@ class ObstacleDetector(object):
         self.logger.info('Applying turn around policy...')
 
         return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
+
+if __name__ == "__main__":
+    obj = ObstacleDetector(DB(), logging.getLogger(__name__), LOG_FILENAME)
 

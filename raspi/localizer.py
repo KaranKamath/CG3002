@@ -81,15 +81,19 @@ class Localizer(object):
                       x, y, heading, altitude)
 
     def _get_latest_readings(self):
-        data = self.db.fetch_data(0, self.imu_timestamp)
-        if data:
-            imu_timestamp = data[-1][0]
-            data = [d[2] for d in data]
+        data = self.db.fetch_data(sid=0, since=self.imu_timestamp,
+                                  auto_delete=True)
+        while not data:
+            time.sleep(0.1)
+            data = self.db.fetch_data(sid=0, since=self.imu_timestamp,
+                                      auto_delete=True)
+        self.imu_timestamp = data[-1][0]
+        data = [d[2] for d in data]
         return data
 
     def _initalize_location(self):
         self.log.info('Waiting for inital x, y and map north...')
-        timestamp, x, y, heading, alt = self.db.fetch_location(True)
+        timestamp, x, y, heading, alt = self.db.fetch_location(blocking=True)
         self.db.delete_locations()
         self.map_north = heading
         self.init_x = x
@@ -105,6 +109,7 @@ class Localizer(object):
         while True:
             data = self._get_latest_readings()
             self._process_imu(data)
+            time.sleep(0.2)
 
 
 generator = Localizer(logger)
