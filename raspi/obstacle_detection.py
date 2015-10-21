@@ -28,6 +28,7 @@ class ObstacleDetector(object):
         fetched_data = self.db.fetch_data(sid=1, since=one_second_ago)
 
         if not fetched_data:
+            self.logger.info('No data fetched by obstacle detector')
             return []
 
         fetched_data = sorted(fetched_data, key=lambda x: x[0])
@@ -44,6 +45,10 @@ class ObstacleDetector(object):
         return False
 
     def get_obstacle_map(self, vals):
+        if vals is []:
+            self.logger.info('Cannot create map due to data missing')
+            return None
+
         obstacle_map = {}
 
         obstacle_map['up'] = self.has_crossed_threshold(vals[0])
@@ -133,6 +138,10 @@ class ObstacleDetector(object):
     
     def recommend(self, current_angle_recommendation):
         obstacle_map = self.get_obstacle_map(self.get_current_data())
+
+        if obstacle_map is None:
+            self.logger.info('Defaulting to return without changing recommendation')
+            return current_angle_recommendation
 
         self.logger.info('Angle to modify: %s', current_angle_recommendation)
 
