@@ -40,7 +40,7 @@ class ObstacleDetector(object):
         return latest_data
 
     def has_crossed_threshold(self, value):
-        if value < 100:
+        if 0 < value < 100:
             return True
         return False
 
