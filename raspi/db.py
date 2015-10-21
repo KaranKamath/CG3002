@@ -69,7 +69,7 @@ class DB(object):
 
         self._open_conn()
         while not data:
-            time.sleep(0.5)
+            time.sleep(0.1)
             data = list(self.conn.execute(query))
         self._close_conn()
         return [str(d) for d in data[0]]
@@ -120,17 +120,17 @@ class DB(object):
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
 
-    def fetch_location(self, blocking=False):
+    def fetch_location(self, timestamp=-1, blocking=False):
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         self._open_conn()
         data = list(self.conn.execute(query))
         self._close_conn()
         if not blocking:
-            return data[0] if data else None
+            return data[0] if data and data[0][1] != timestamp else None
 
         self._open_conn()
-        while not data:
-            time.sleep(0.5)
+        while not (data and data[0][1] != timestamp):
+            time.sleep(0.1)
             data = list(self.conn.execute(query))
         self._close_conn()
         return data[0]

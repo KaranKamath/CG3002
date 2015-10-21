@@ -4,6 +4,7 @@ import logging
 import sys
 import time
 from math import atan2, pi
+from scipy.signal import medfilt
 from db import DB
 from location_approximator import LocationApproximator
 from utils import CommonLogger, init_logger
@@ -18,16 +19,12 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Localizer(object):
 
-    device_timestamps = {
-        0: 0,
-        1: 0
-    }
+    imu_timestamp = int(round(time.time() * 1000))
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
     coords_delay = 4
     coords_offset = 0
-    prev_known_heading = None
-    heading_alpha = 0.25
+    median_window = []
 
     def __init__(self, logger, init_x=0, init_y=0):
         self.db = DB()
@@ -36,23 +33,17 @@ class Localizer(object):
         for device in self.device_timestamps:
             self.device_timestamps[device] = timestamp
 
-    def _get_data(self, sid, timestamp):
-        return self.db.fetch_data(sid=sid, since=timestamp,
-                                  auto_delete=True)
-
     def _get_altitude(self, data):
         return data[0] / 1000
 
     def _get_heading(self, data):
-        # a = data[1:4]
-        a = [-16100, 1300, 500]
+        # a = [-16100, 1300, 500]
+        a = data[1:4]
         m = data[4:7]
         f = [0, 0, -1]
         raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-        self.log.info('Raw %s', raw_heading)
         raw_heading = convert_heading_to_horizontal_axis(raw_heading,
                                                          self.map_north)
-        self.log.info('Converted %s', raw_heading)
         return self._filter_heading(raw_heading)
 
     def _calculate_raw_heading(self, a, m, f):
@@ -65,13 +56,12 @@ class Localizer(object):
         return (heading + 360) if heading < 0 else heading
 
     def _filter_heading(self, heading):
-        if self.prev_known_heading is None:
-            self.prev_known_heading = heading
-        else:
-            heading_diff = heading - self.prev_known_heading
-            self.prev_known_heading = self.prev_known_heading + \
-                self.heading_alpha * heading_diff
-        return self.prev_known_heading
+        self.median_window.append(heading)
+        if len(self.median_window) <= 5:
+            return heading
+        self.median_window = self.median_window[1:]
+        filtered_heading = medfilt(self.median_window, 5)[2]
+        return filtered_heading
 
     def _get_coords(self, data, heading):
         self.loc_approx.append_to_buffers(data, heading)
@@ -94,15 +84,11 @@ class Localizer(object):
                       x, y, heading, altitude)
 
     def _get_latest_readings(self):
-        latest_data = {}
-        for (k, v) in self.device_timestamps.items():
-            data = self._get_data(k, v)
-            if data:
-                self.device_timestamps[k] = data[-1][0]
-                latest_data[k] = [d[2] for d in data]
-            else:
-                latest_data[k] = None
-        return latest_data
+        data = self.db.fetch_data(0, self.imu_timestamp)
+        if data:
+            imu_timestamp = data[-1][0]
+            data = [d[2] for d in data]
+        return data
 
     def _initalize_location(self):
         self.log.info('Waiting for inital x, y and map north...')
@@ -121,8 +107,7 @@ class Localizer(object):
                                                self.log)
         while True:
             data = self._get_latest_readings()
-            self._process_imu(data[0])
-            time.sleep(0.2)
+            self._process_imu(data)
 
 
 generator = Localizer(logger)

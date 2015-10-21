@@ -23,8 +23,9 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Navigator(object):
 
-    ANGLE_THRESHOLD = 15
-    DISTANCE_THRESHOLD = 100
+    ANGLE_THRESHOLD = 20
+    DISTANCE_THRESHOLD = 75
+    location_tstmp = 1
 
     def __init__(self, logger):
         self.log = logger
@@ -47,11 +48,10 @@ class Navigator(object):
 
     @property
     def user_location(self):
-        t_stmp, x, y, heading, alt = self.db.fetch_location(True)
-        while t_stmp == 0:
-            time.sleep(0.5)
-            t_stmp, x, y, heading, alt = self.db.fetch_location(True)
-        return (x, y, heading, alt)
+        data = self.db.fetch_location(timestamp=self.location_tstmp,
+                                      blocking=True)
+        self.location_tstmp = data[0]
+        return data[1:]
 
     def start(self):
         self._wait_for_origin_and_destination()
@@ -60,7 +60,7 @@ class Navigator(object):
         self._acquire_next_node()
         while not self.navigation_finished:
             self._navigate_to_next_node()
-            time.sleep(0.5)
+            time.sleep(0.1)
 
     def stop(self):
         self.navigation_finished = True
