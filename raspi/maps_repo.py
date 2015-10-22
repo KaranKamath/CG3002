@@ -8,17 +8,11 @@ class MapsRepo(object):
     MAP_URL = 'http://showmyway.comp.nus.edu.sg/getMapInfo.php?'\
               'Building={building}&Level={level}'
     SPLIT_RE = re.compile('\s*,\s*')
-    BUILDING_MAP = {
-        '1': 'COM1',
-        '2': 'COM2'
-    }
 
     def __init__(self):
         self._maps = {}
 
     def _key_generator(self, building, level):
-        if building in self.BUILDING_MAP:
-            building = self.BUILDING_MAP[building]
         return building + '-' + level
 
     def map(self, building, level, force_refetch=False):

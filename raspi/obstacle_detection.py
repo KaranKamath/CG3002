@@ -3,21 +3,23 @@ import logging
 from scipy.signal import medfilt
 from db import DB
 
-DELTA_TIME = 1000 # 1 second
+DELTA_TIME = 1000  # 1 second
 LEFT = 90
 RIGHT = -90
 AROUND_LEFT = 180
 AROUND_RIGHT = -180
 STRAIGHT = 0
 
-THRESHOLD_STRAIGHT_LEFT = 45
-THRESHOLD_STRAIGHT_RIGHT = -45
-THRESHOLD_LEFT = 135
-THRESHOLD_RIGHT = -135
+THRESHOLD_STRAIGHT_LEFT = 20
+THRESHOLD_STRAIGHT_RIGHT = -20
+THRESHOLD_LEFT = 160
+THRESHOLD_RIGHT = -160
 THRESHOLD_MID_LEFT = 90
 THRESHOLD_MID_RIGHT = -90
 
 MEDIAN_WINDOW = 5
+MAX_SENSOR_VAL = 301
+
 
 class ObstacleDetector(object):
 
@@ -37,22 +39,32 @@ class ObstacleDetector(object):
         fetched_data = sorted(fetched_data, key=lambda x: x[0])
 
         latest_data = [x[2] for x in fetched_data][-1]
-         
+
+        # clean up 0s
+        for i in range(len(latest_data)):
+            if latest_data[i] == 0:
+                latest_data[i] = MAX_SENSOR_VAL
+
         self.past_vals.append(latest_data)
 
         if len(self.past_vals) > MEDIAN_WINDOW:
             self.past_vals = self.past_vals[(-1 * MEDIAN_WINDOW):]
         else:
-            self.logger.info('Not enough data to filter, returning raw: %s', latest_data)
+            self.logger.info(
+                'Not enough data to filter, returning raw: %s', latest_data)
             return latest_data
-       
+
         self.logger.info('Selecting latest data: %s', latest_data)
 
         filtered_vals = []
-        filtered_vals[0] = medfilt([x[0] for x in self.past_vals], MEDIAN_WINDOW)[2]
-        filtered_vals[1] = medfilt([x[1] for x in self.past_vals], MEDIAN_WINDOW)[2]
-        filtered_vals[2] = medfilt([x[2] for x in self.past_vals], MEDIAN_WINDOW)[2]
-        filtered_vals[3] = medfilt([x[3] for x in self.past_vals], MEDIAN_WINDOW)[2]
+        filtered_vals.append(medfilt(
+            [x[0] for x in self.past_vals], MEDIAN_WINDOW)[2])
+        filtered_vals.append(medfilt(
+            [x[1] for x in self.past_vals], MEDIAN_WINDOW)[2])
+        filtered_vals.append(medfilt(
+            [x[2] for x in self.past_vals], MEDIAN_WINDOW)[2])
+        filtered_vals.append(medfilt(
+            [x[3] for x in self.past_vals], MEDIAN_WINDOW)[2])
 
         self.logger.info('Filtered Values: %s', filtered_vals)
 
@@ -89,7 +101,7 @@ class ObstacleDetector(object):
             return 180 + (180 + raw_final_angle)
 
         return raw_final_angle
-    
+
     def apply_straight_policy(self, current_angle_recommendation, obstacle_map):
         # No obstacle in front
         if not obstacle_map['up']:
@@ -98,7 +110,7 @@ class ObstacleDetector(object):
         # Obstacles all around
         if obstacle_map['left'] and obstacle_map['right']:
             return AROUND_LEFT
-         
+
         # Obstacle on the front and left but not right
         if obstacle_map['left']:
             return RIGHT
@@ -106,7 +118,7 @@ class ObstacleDetector(object):
         # Obstacle on the front and right but not left
         if obstacle_map['right']:
             return LEFT
-    
+
         # No obstacles on the side, but on the front
         if current_angle_recommendation >= 0:
             return LEFT
@@ -128,10 +140,11 @@ class ObstacleDetector(object):
         # Obstacle right and left, but not straight, or just the left
         if current_angle_recommendation >= THRESHOLD_MID_LEFT:
             return AROUND_LEFT
-        
+
         return STRAIGHT
-        
-    def apply_right_turn_policy(self, current_angle_recommendation, obstacle_map):
+
+    def apply_right_turn_policy(self, current_angle_recommendation,
+                                obstacle_map):
         # No obstacle on the right
         if not obstacle_map['right']:
             return current_angle_recommendation
@@ -150,16 +163,18 @@ class ObstacleDetector(object):
 
         return STRAIGHT
 
-    def apply_turn_around_policy(self, current_angle_recommendation, obstacle_map):
+    def apply_turn_around_policy(self, current_angle_recommendation,
+                                 obstacle_map):
         if current_angle_recommendation >= 0:
             return AROUND_LEFT
         return AROUND_RIGHT
-    
+
     def recommend(self, current_angle_recommendation):
         obstacle_map = self.get_obstacle_map(self.get_current_data())
 
         if obstacle_map is None:
-            self.logger.info('Defaulting to return without changing recommendation')
+            self.logger.info(
+                'Defaulting to return without changing recommendation')
             return current_angle_recommendation
 
         self.logger.info('Angle to modify: %s', current_angle_recommendation)
@@ -173,11 +188,10 @@ class ObstacleDetector(object):
         elif THRESHOLD_STRAIGHT_LEFT < current_angle_recommendation <= THRESHOLD_LEFT:
             self.logger.info('Applying left policy...')
             return self.apply_left_turn_policy(current_angle_recommendation, obstacle_map)
-        
+
         self.logger.info('Applying turn around policy...')
 
         return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
 
 if __name__ == "__main__":
     obj = ObstacleDetector(DB(), logging.getLogger(__name__), LOG_FILENAME)
-
