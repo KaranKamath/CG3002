@@ -1,16 +1,17 @@
 import time
 import numpy as np
-from enum import Enum
 from db import DB
 from scipy import signal
 from math import radians, cos, sin
 
 STEP_LENGTH = 50  # cm
-THRESHOLD_MIN_NORM_VAL = 0.2
-FILTER_ORDER = 5
-FS = 10  # Sample Rate
+FILTER_ORDER = 3
+FS = 5  # Sample Rate
 CUTOFF = 1
-ACC_MAX_VAL = 32768
+ACC_MAX_VAL = (32768 * 2) - 1
+ACC_NEG_RANGE = 32767
+GYRO_MAX = 32768
+THRESHOLD_GYRO = 0.03
 
 
 def butter_lowpass(cutoff, fs, order=5):
@@ -36,62 +37,103 @@ class LocationApproximator(object):
         self.data_buffer = []
         self.step_count = 0
         self.last_batch_steps = 0
+        self.last_batch_headings = []
+        self.last_batch_data_buffer = []
         self.heading_buffer = []
         self.x = x
         self.y = y
         self.logger = logger
+        self.calibrated = False
+        self.threshold = THRESHOLD_GYRO
+
+    def is_calibrated(self):
+        return self.calibrated
 
     def get_step_count(self):
         return self.step_count
 
     def flush(self):
-        self.logger.info('Flushing values: %s', self.data_buffer)
+
+        # if not self.calibrated:
+        #    self.logger.info('Calibrating')
+        #    self.logger.info('Data Buffer: %s', self.data_buffer)
+        #    self.threshold = sorted(self.data_buffer)[-1]
+        #    self.threshold *= 1.1
+        #    self.logger.info('Threshold set to: %s', str(self.threshold))
+        #    self.copy_and_clear_buffers()
+        #    self.calibrated = True
+        #    return
+
+        #self.logger.info('\nThreshold: %s\n', self.threshold)
+#        self.logger.info('\nFlushing values: %s', self.data_buffer)
+
+        cumulative_buffer = self.last_batch_data_buffer + self.data_buffer
+
         low_passed_vals = butter_lowpass_filter(
-            self.data_buffer, CUTOFF, FS, FILTER_ORDER)
+            cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
+
+        #self.logger.info('\nFiltered values: %s', low_passed_vals)
+
         peak_indices = signal.argrelmax(low_passed_vals)[0]
-        peak_vals = [low_passed_vals[x] for x in peak_indices]
-        accepted_peaks = [x for x in peak_vals if x > MIN_NORM_THRESHOLD]
+#        self.logger.info('\nPeak Indices: %s\n', peak_indices)
+        peak_vals = [low_passed_vals[x] for x in peak_indices if low_passed_vals[x] > self.threshold]
+        accepted_peaks = [x for x in peak_vals]
 
-        self.last_batch_steps = len(accepted_peaks)
-        self.last_batch_headings = self.heading_buffer
+        #self.logger.info('Peak values: %s', accepted_peaks)
 
-        self.heading_buffer = []
-        self.data_buffer = []
-        self.count = self.count + len(accepted_peaks)
+        if (len(accepted_peaks) * 2) > self.last_batch_steps:
+            self.last_batch_steps = (
+                len(accepted_peaks) * 2) - self.last_batch_steps
+            self.step_count = self.step_count + self.last_batch_steps
+        else:
+            self.last_batch_steps = 0
 
-        self.logger.info('Batch Steps Counted: %s', str(len(accepted_peaks)))
-        self.logger.info('Total Steps Counted: %s', str(self.count))
+        self.copy_and_clear_buffers()
+        
+        #self.logger.info('Batch Steps Counted: %s', str(self.last_batch_steps))
+        self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
-            STEP_LENGTH * 1.0 / len(last_batch_headings)
+            STEP_LENGTH * 1.0 / len(self.last_batch_headings)
         vectorsX = [average_dist * cos(radians(heading))
                     for heading in self.last_batch_headings]
         vectorsY = [average_dist * sin(radians(heading))
                     for heading in self.last_batch_headings]
 
-        self.logger.info('Delta X: %s', str(sum(vectorsX)))
-        self.logger.info('Delta Y: %s', str(sum(vectorsY)))
+#        self.logger.info('Delta X: %s', str(sum(vectorsX)))
+#        self.logger.info('Delta Y: %s', str(sum(vectorsY)))
 
-        self.x = self.x + int(sum(vectorsX).round())
-        self.y = self.y + int(sum(vectorsY).round())
+        self.x = self.x + round(int(sum(vectorsX)))
+        self.y = self.y + round(int(sum(vectorsY)))
 
-        self.logger.info('New X: %s', str(self.x))
-        self.logger.info('New Y: %s', str(self.y))
+#        self.logger.info('New X: %s', str(self.x))
+#        self.logger.info('New Y: %s', str(self.y))
+
+    def copy_and_clear_buffers(self):
+        self.last_batch_headings = self.heading_buffer
+        self.heading_buffer = []
+        self.last_batch_data_buffer = self.data_buffer
+        self.data_buffer = []
 
     def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
         #fetched_data = sorted(self.db.fetch(sid=1, since=self.last_ts), key=lambda d: d[0])
 
-        fetched_values = [(datapoint[1] + datapoint[2] + datapoint[3]) * 1.0 / 3.0
-                          for datapoint in fetched_data]
+        #self.logger.info('Data sent to localizer: %s', fetched_data)
 
-        self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
+        # fetched_values = [(abs(datapoint[1]) + abs(datapoint[2]) + abs(datapoint[3])) * 1.0 / 3.0
+        #                  for datapoint in fetched_data]
+
+        fetched_values = [datapoint[-2] for datapoint in fetched_data]
+        #self.logger.info('Incoming Processed Data: %s', fetched_values)
+
+        #self.logger.info('Values Rcvd: %s', str(len(fetched_values)))
 
         if len(fetched_values) < 1:
             print "no value"
             return
 
-        normalized_vals = [v * 1.0 / ACC_MAX_VAL for v in fetched_values]
+        normalized_vals = [v * 1.0 / GYRO_MAX for v in fetched_values]
 
         self.data_buffer.extend(normalized_vals)
         self.heading_buffer.append(heading)

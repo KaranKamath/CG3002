@@ -5,40 +5,30 @@ import sys
 import time
 import serial
 from db import DB
-from logging.handlers import TimedRotatingFileHandler
-from utils import CommonLogger
+from utils import CommonLogger, init_logger
+from audio_driver import AudioDriver
 
 LOG_FILENAME = '/home/pi/logs/uart.log'
-LOG_LEVEL = logging.INFO
-
-p = argparse.ArgumentParser(description="Uart service")
-p.add_argument("-l", "--log", help="log file (default: " + LOG_FILENAME + ")")
-args = p.parse_args()
-if args.log:
-    LOG_FILENAME = args.log
-
-logger = logging.getLogger(__name__)
-logger.setLevel(LOG_LEVEL)
-h = TimedRotatingFileHandler(LOG_FILENAME, when='H', backupCount=3)
-h.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
-logger.addHandler(h)
+logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 
-class UartHandler():
+class UartHandler(object):
 
     def __init__(self, logger, serial_line='/dev/ttyAMA0',
                  baud_rate=9600, timeout=1):
         self.ser = serial.Serial(serial_line, baud_rate, timeout=timeout)
         self.logger = logger
-        self.db = DB('/home/pi/db/uart.db')
+        self.db = DB()
+        self.audio = AudioDriver()
         self.logger.info('Opening serial line')
 
     def _serial_read_line(self):
         return self.ser.readline().strip()
 
     def _wait_for_begin(self):
+        self.audio.prompt_begin()
         while True:
             if self._serial_read_line() == 'BEGIN':
                 self.logger.info('Got BEGIN')
@@ -71,6 +61,7 @@ class UartHandler():
 
     def read_origin_and_destination(self):
         self.logger.info('Waiting for origin and destination...')
+        self.audio.prompt_enter_info()
         _input = self._serial_read_line()
         while not _input:
             _input = self._serial_read_line()
