@@ -12,7 +12,7 @@ CUTOFF = 2
 ACC_MAX_VAL = (32768 * 2) - 1
 ACC_NEG_RANGE = 32767
 GYRO_MAX = 32768
-THRESHOLD_GYRO = 0.05
+THRESHOLD_GYRO = 0.03
 
 
 def butter_lowpass(cutoff, fs, order=5):
@@ -70,7 +70,19 @@ class LocationApproximator(object):
         low_passed_vals = butter_lowpass_filter(
             cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
 
-        self.logger.info('\nFiltered values: %s', low_passed_vals)
+        low_passed_gyro_x = butter_lowpass_filter(
+            self.gyro_x_buffer, 2, FS, FILTER_ORDER)
+
+        peak_indices = signal.argrelextrema(low_passed_gyro_x, np.greater)[0]
+        fall_indices = signal.argrelextrema(low_passed_gyro_x, np.less)[0]
+        
+        peak_vals = [low_passed_gyro_x[x] for x in peak_indices]
+        fall_vals = [low_passed_gyro_x[x] for x in fall_indices]
+        self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
+        self.logger.info('Gyro X Peaks: %s', peak_vals)
+        self.logger.info('Gyro X Falls: %s', fall_vals)
+
+        # self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
 #        self.logger.info('\nPeak Indices: %s\n', peak_indices)
@@ -78,7 +90,7 @@ class LocationApproximator(object):
         peak_vals = [low_passed_vals[x] for x in peak_indices if low_passed_vals[x] > self.threshold]
         accepted_peaks = [x for x in peak_vals]
 
-        self.logger.info('Peak values: %s', accepted_peaks)
+        # self.logger.info('Peak values: %s', accepted_peaks)
 
         if (len(accepted_peaks) * 2) > self.last_batch_steps:
             self.last_batch_steps = (
@@ -90,7 +102,7 @@ class LocationApproximator(object):
         self.copy_and_clear_buffers()
         
         #self.logger.info('Batch Steps Counted: %s', str(self.last_batch_steps))
-        self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
+        # self.logger.info('Total Steps Counted: %s\n', str(self.step_count))
 
         average_dist = self.last_batch_steps * \
             STEP_LENGTH * 1.0 / len(self.last_batch_headings)
@@ -104,18 +116,6 @@ class LocationApproximator(object):
 
         self.x = self.x + round(int(sum(vectorsX)))
         self.y = self.y + round(int(sum(vectorsY)))
-
-        low_passed_gyro_x = butter_lowpass_filter(
-            self.gyro_x_buffer, 2, FS, FILTER_ORDER)
-
-        peak_indices = signal.argrelextrema(low_passed_gyro_x, np.greater)[0]
-        fall_indices = signal.argrelextrema(low_passed_gyro_x, np.less)[0]
-        
-        peak_vals = [low_passed_gyro_x[x] for x in peak_indices]
-        fall_vals = [low_passed_gyro_x[x] for x in fall_indices]
-        self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
-        self.logger.info('Gyro X Peaks: %s', peak_vals)
-        self.logger.info('Gyro X Falls: %s', fall_vals)
 #        self.logger.info('New X: %s', str(self.x))
 #        self.logger.info('New Y: %s', str(self.y))
 
@@ -150,7 +150,7 @@ class LocationApproximator(object):
         self.heading_buffer.append(heading)
 
         fetched_gyro_x_values = [datapoint[-3] for datapoint in fetched_data]
-        self.gyro_x_buffer.extend([ v * 1.0 / GYRO_MAX for v in fetched_gyro_x_values ])
+        self.gyro_x_buffer += [v * 1.0 / GYRO_MAX for v in fetched_gyro_x_values]
 
     def get_position(self):
         return (self.x, self.y)

@@ -79,8 +79,8 @@ class Localizer(object):
         heading = self._get_heading(imu_data)
         x, y = self._get_coords(imu_data, heading)
         self.db.insert_location(x, y, heading, altitude)
-        self.log.info('Updated location to %s, %s, %s, %s',
-                      x, y, heading, altitude)
+        # self.log.info('Updated location to %s, %s, %s, %s',
+                    #   x, y, heading, altitude)
 
     def _get_latest_imu_readings(self):
         data = self.db.fetch_data(sid=0, since=self.imu_timestamp)
