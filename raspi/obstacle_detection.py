@@ -218,7 +218,7 @@ class ObstacleDetector(object):
     def start(self):
         """ This runs in the daemon """
         while True:
-            self.drive_actuators(self.get_obstacle_map())
+            self.drive_actuators(self.obstacle_map)
             time.sleep(0.5)            
 
 obsdet = ObstacleDetector(logger)
