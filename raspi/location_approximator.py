@@ -42,6 +42,7 @@ class LocationApproximator(object):
         self.logger = logger
         self.calibrated = False
         self.threshold = THRESHOLD_GYRO
+        self.gyro_x_buffer = []
 
     def is_calibrated(self):
         return self.calibrated
@@ -103,6 +104,12 @@ class LocationApproximator(object):
         self.x = self.x + round(int(sum(vectorsX)))
         self.y = self.y + round(int(sum(vectorsY)))
 
+        low_passed_gyro_x = butter_lowpass_filter(
+            self.gyro_x_buffer, 2, FS, FILTER_ORDER)
+
+        peak_indices = signal.argrelextrema(low_passed_gyro_x)[0]
+        peak_vals = [low_passed_gyro_x[x] for x in peak_indices]
+        self.logger.info('Gyro X Extrema: %s', peak_vals)
 #        self.logger.info('New X: %s', str(self.x))
 #        self.logger.info('New Y: %s', str(self.y))
 
@@ -111,6 +118,7 @@ class LocationApproximator(object):
         self.heading_buffer = []
         self.last_batch_data_buffer = self.data_buffer
         self.data_buffer = []
+        self.gyro_x_buffer = []
 
     def append_to_buffers(self, fetched_data, heading):
         # fetched_data list format: Altimeter, Accelerometer X, Y, Z, Magnetometer X, Y, Z, Gyroscope X, Y, Z
@@ -134,6 +142,9 @@ class LocationApproximator(object):
 
         self.data_buffer.extend(normalized_vals)
         self.heading_buffer.append(heading)
+
+        fetched_gyro_x_values = [datapoint[-3] for datapoint in fetched_data]
+        self.gyro_x_buffer.extend([ v * 1.0 / GYRO_MAX for v in fetched_gyro_x_values ])
 
     def get_position(self):
         return (self.x, self.y)
