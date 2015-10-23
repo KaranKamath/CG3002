@@ -8,11 +8,11 @@ from utils import now
 STEP_LENGTH = 50  # cm
 FILTER_ORDER = 3
 FS = 5  # Sample Rate
-CUTOFF = 1
+CUTOFF = 2
 ACC_MAX_VAL = (32768 * 2) - 1
 ACC_NEG_RANGE = 32767
 GYRO_MAX = 32768
-THRESHOLD_GYRO = 0.03
+THRESHOLD_GYRO = 0.05
 
 
 def butter_lowpass(cutoff, fs, order=5):
@@ -70,14 +70,15 @@ class LocationApproximator(object):
         low_passed_vals = butter_lowpass_filter(
             cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
 
-        #self.logger.info('\nFiltered values: %s', low_passed_vals)
+        self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
 #        self.logger.info('\nPeak Indices: %s\n', peak_indices)
+        self.logger.info([low_passed_vals[x] for x in peak_indices])
         peak_vals = [low_passed_vals[x] for x in peak_indices if low_passed_vals[x] > self.threshold]
         accepted_peaks = [x for x in peak_vals]
 
-        #self.logger.info('Peak values: %s', accepted_peaks)
+        self.logger.info('Peak values: %s', accepted_peaks)
 
         if (len(accepted_peaks) * 2) > self.last_batch_steps:
             self.last_batch_steps = (

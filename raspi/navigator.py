@@ -21,10 +21,9 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Navigator(object):
 
-    ANGLE_THRESHOLD = 15
-    DISTANCE_THRESHOLD = 75
-    LAX_ANGLE_THRESHOLD = 90
-    LAX_DISTANCE_THRESHOLD = 155
+    ANGLE_THRESHOLD = 20
+    RELAXED_ANGLE_THRESHOLD = 10
+    DISTANCE_THRESHOLD = 100
     location_tstmp = 0
     audio_delay = 6  # 0.5s * 6 = 3s
     audio_offset = 0
@@ -122,8 +121,9 @@ class Navigator(object):
     def _generate_prompt(self, angle):
         if abs(angle) < self.ANGLE_THRESHOLD:
             if self.current_prompt is None or \
-                    self.current_prompt == PromptDirn.left and angle <= 0 or \
-                    self.current_prompt == PromptDirn.right and angle >= 0:
+                    (abs(angle) <= self.RELAXED_ANGLE_THRESHOLD and
+                     (self.current_prompt == PromptDirn.right or
+                      self.current_prompt == PromptDirn.left)):
                 new_prompt = PromptDirn.straight
             else:
                 new_prompt = self.current_prompt
@@ -140,6 +140,7 @@ class Navigator(object):
         if prompt == PromptDirn.left or prompt == PromptDirn.right:
             self.audio_offset += 1
             if self.audio_offset == self.audio_delay:
+                self.audio_offset = 0
                 self.audio.prompt(prompt)
 
     def start(self):
