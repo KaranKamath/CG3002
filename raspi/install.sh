@@ -27,8 +27,8 @@ sudo chmod +x /etc/init.d/localizer
 sudo insserv localizer
 
 sudo service obsdet stop
-sudo rm -f /home/pi/logs/obstacle_detection.log*
-touch /home/pi/logs/obstacle_detection.log
+sudo rm -f /home/pi/logs/obstacle_detector.log*
+touch /home/pi/logs/obstacle_detector.log
 sudo cp services/obsdet-service.sh /etc/init.d/obsdet
 sudo chmod +x /etc/init.d/obsdet
 sudo insserv obsdet
