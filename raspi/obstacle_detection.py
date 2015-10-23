@@ -77,7 +77,7 @@ class ObstacleDetector(object):
 
     def get_normalized_val(self, value):
         if 0 < value < THRESHOLD_USOUND_HIGH:
-            return value * 100.0 / THRESHOLD_USOUND_HIGH
+            return 101 - (value * 100.0 / THRESHOLD_USOUND_HIGH)
         return False
 
     @property
