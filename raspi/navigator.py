@@ -10,8 +10,6 @@ from maps_repo import MapsRepo
 from prompts_enum import PromptDirn
 from directions_utils import normalize
 from audio_driver import AudioDriver
-from motor_driver import MotorDriver
-from obstacle_detection import ObstacleDetector
 from utils import CommonLogger, dijkstra, euclidean_dist, init_logger
 
 
@@ -28,6 +26,8 @@ class Navigator(object):
     LAX_ANGLE_THRESHOLD = 90
     LAX_DISTANCE_THRESHOLD = 155
     location_tstmp = 0
+    audio_delay = 6  # 0.5s * 6 = 3s
+    audio_offset = 0
 
     def __init__(self, logger):
         self.log = logger
@@ -35,8 +35,6 @@ class Navigator(object):
         self.db = DB()
         self.maps = MapsRepo()
         self.audio = AudioDriver()
-        self.motors = MotorDriver()
-        self.obstacle_detector = ObstacleDetector(self.db, self.log)
         self.current_prompt = None
         self.navigation_finished = False
 
@@ -90,12 +88,9 @@ class Navigator(object):
 
     def _navigate_to_next_node(self):
         x, y, heading, alt = self.user_location
-        dist, angle = self._calc_directions(x, y,
-                                            self.next_node['x'],
-                                            self.next_node['y'],
-                                            heading)
+        dist, angle = self._calc_directions(x, y, self.next_node['x'],
+                                            self.next_node['y'], heading)
 
-        angle = self.obstacle_detector.recommend(angle)
         self.log.info('Next node %s @[%scm, %sdeg]', self.next_node_id,
                       dist, angle)
         if self._node_reached(dist, angle):
@@ -109,7 +104,9 @@ class Navigator(object):
                 self.log.info('Navigating to node %s', self.next_node_id)
                 self._navigate_to_next_node()
         else:
-            self._generate_prompt(angle)
+            new_prompt = self._generate_prompt(angle)
+            self._play_prompt(new_prompt)
+            self.current_prompt = new_prompt
 
     def _node_reached(self, dist, angle):
         node_reached = (dist < self.DISTANCE_THRESHOLD)
@@ -134,11 +131,16 @@ class Navigator(object):
             new_prompt = PromptDirn.left
         else:
             new_prompt = PromptDirn.right
+        return new_prompt
 
-        if self.current_prompt is None or self.current_prompt != new_prompt:
-            self.current_prompt = new_prompt
-            self.audio.prompt(new_prompt)
-            self.motors.prompt(new_prompt)
+    def _play_prompt(self, prompt):
+        if self.current_prompt is None or self.current_prompt != prompt:
+            self.audio.prompt(prompt)
+            self.audio_offset = 0
+        if prompt == PromptDirn.left or prompt == PromptDirn.right:
+            self.audio_offset += 1
+            if self.audio_offset == self.audio_delay:
+                self.audio.prompt(prompt)
 
     def start(self):
         self._wait_for_origin_and_destination()
@@ -153,7 +155,6 @@ class Navigator(object):
         self.navigation_finished = True
         self.current_prompt = PromptDirn.end
         self.audio.prompt(self.current_prompt)
-        self.motors.prompt(self.current_prompt)
 
 
 nav = Navigator(logger)
