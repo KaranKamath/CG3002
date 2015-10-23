@@ -102,8 +102,8 @@ class ObstacleDetector(object):
         return obstacle_map
 
      def drive_actuators(self, obstacle_map):
-        self.motor_driver.left_motor(obstacle_map['left'])
-        self.motor_driver.right_motor(obstacle_map['right'])
+        self.motor_driver.left_motor(max([obstacle_map['left'], obstacle_map['front_left']))
+        self.motor_driver.right_motor(max([obstacle_map['right'], obstacle_map['front_right']))
         self.motor_driver.center_motor(obstacle_map['front'])
 
     def start(self):
