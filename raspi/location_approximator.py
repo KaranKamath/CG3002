@@ -107,9 +107,13 @@ class LocationApproximator(object):
         low_passed_gyro_x = butter_lowpass_filter(
             self.gyro_x_buffer, 2, FS, FILTER_ORDER)
 
-        peak_indices = signal.argrelextrema(low_passed_gyro_x)[0]
+        peak_indices = signal.argrelextrema(low_passed_gyro_x, np.greater)[0]
+        fall_indices = signal.argrelextrema(low_passed_gyro_x, np.less)[0]
+        
         peak_vals = [low_passed_gyro_x[x] for x in peak_indices]
-        self.logger.info('Gyro X Extrema: %s', peak_vals)
+        fall_vals = [low_passed_gyro_x[x] for x in fall_indices]
+        self.logger.info('Gyro X Peaks: %s', peak_vals)
+        self.logger.info('Gyro X Falls: %s', falls_vals)
 #        self.logger.info('New X: %s', str(self.x))
 #        self.logger.info('New Y: %s', str(self.y))
 
