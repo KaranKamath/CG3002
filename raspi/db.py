@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import time
+from utils import now
 
 
 class DB(object):
@@ -8,6 +9,7 @@ class DB(object):
     batch_size = 2
     initial_timestamp = 0
     block_timeout = 0.1 # 100ms as data incoming at 10Hz
+    timeout_log_offset = 20
 
     def __init__(self, logger, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
@@ -69,7 +71,7 @@ class DB(object):
         while not data:
             time.sleep(self.block_timeout)
             blk_counter += 1
-            if blk_counter >= 10:
+            if blk_counter >= self.timeout_log_offset:
                 self.log.info("Still waiting on data...")
                 blk_counter = 0
             data = list(self.conn.execute(query))
@@ -78,7 +80,7 @@ class DB(object):
 
     def insert_data(self, sid, raw_data):
         data = json.dumps(raw_data)
-        timestamp = int(round(time.time() * 1000))
+        timestamp = now()
         self.data_to_insert.append([timestamp, sid, data])
         if len(self.data_to_insert) >= self.batch_size:
             self._open_conn()
@@ -102,7 +104,7 @@ class DB(object):
         while not data:
             time.sleep(self.block_timeout)
             blk_counter += 1
-            if blk_counter >= 10:
+            if blk_counter >= self.timeout_log_offset:
                 self.log.info("Still waiting on data...")
                 blk_counter = 0
             data = list(self.conn.execute(query, params))
@@ -120,8 +122,7 @@ class DB(object):
 
     def insert_location(self, x, y, heading, altitude, is_initial=False):
         self._open_conn()
-        timestamp = self.initial_timestamp if is_initial else\
-            int(round(time.time() * 1000))
+        timestamp = self.initial_timestamp if is_initial else now()
         query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
@@ -135,7 +136,7 @@ class DB(object):
                            data[0][0] == self.initial_timestamp):
             time.sleep(self.block_timeout)
             blk_counter += 1
-            if blk_counter >= 10:
+            if blk_counter >= self.timeout_log_offset:
                 self.log.info("Still waiting on data...")
                 blk_counter = 0
             data = list(self.conn.execute(query))

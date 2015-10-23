@@ -4,7 +4,7 @@ import logging
 import sys
 from scipy.signal import medfilt
 from db import DB
-from utils import CommonLogger, init_logger
+from utils import CommonLogger, init_logger, now
 from motor_driver import MotorDriver
 
 LOG_FILENAME = '/home/pi/logs/obstacle_detector.log'
@@ -12,7 +12,7 @@ logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
-DELTA_TIME = 1000  # 1 second
+DELTA_TIME = 1  # 1 second
 
 MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
@@ -29,7 +29,7 @@ class ObstacleDetector(object):
         self.logger.info('Starting up obstacle detector...')
 
     def get_current_data(self):
-        one_second_ago = int(round(time.time() * 1000) - DELTA_TIME)
+        one_second_ago = now() - DELTA_TIME
         fetched_data = self.db.fetch_data(sid=1, since=one_second_ago)
 
         if not fetched_data:

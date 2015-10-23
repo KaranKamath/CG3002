@@ -7,7 +7,7 @@ from math import atan2, pi
 from scipy.signal import medfilt
 from db import DB
 from location_approximator import LocationApproximator
-from utils import CommonLogger, init_logger
+from utils import CommonLogger, init_logger, now
 from vector_ops import dot_3d, cross_3d, normalize_3d
 from directions_utils import convert_heading_to_horizontal_axis
 
@@ -19,7 +19,7 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Localizer(object):
 
-    imu_timestamp = int(round(time.time() * 1000))
+    imu_timestamp = now()
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
     coords_delay = 4
