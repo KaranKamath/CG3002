@@ -3,9 +3,9 @@ import logging
 from scipy.signal import medfilt
 from db import DB
 from utils import CommonLogger, init_logger
+from motor_driver import MotorDriver
 
-
-LOG_FILENAME = '/home/pi/logs/localizer.log'
+LOG_FILENAME = '/home/pi/logs/obstacle_detector.log'
 logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
@@ -30,10 +30,11 @@ MAX_SENSOR_VAL = 301
 
 class ObstacleDetector(object):
 
-    def __init__(self, db, logger):
+    def __init__(self, logger):
         self.past_vals = []
-        self.db = db
+        self.db = DB()
         self.logger = logger
+        self.motor_driver = MotorDriver()
 
     def get_current_data(self):
         one_second_ago = int(round(time.time() * 1000) - DELTA_TIME)
@@ -72,6 +73,8 @@ class ObstacleDetector(object):
             [x[2] for x in self.past_vals], MEDIAN_WINDOW)[2])
         filtered_vals.append(medfilt(
             [x[3] for x in self.past_vals], MEDIAN_WINDOW)[2])
+        filtered_vals.append(medfilt(
+            [x[4] for x in self.past_vals], MEDIAN_WINDOW)[2])
 
         self.logger.info('Filtered Values: %s', filtered_vals)
 
@@ -82,17 +85,22 @@ class ObstacleDetector(object):
             return True
         return False
 
-    def get_obstacle_map(self, vals):
+    @property
+    def obstacle_map(self):
+
+        vals = self.get_current_data()
+
         if len(vals) == 0:
             self.logger.info('Cannot create map due to data missing')
             return None
 
         obstacle_map = {}
 
-        obstacle_map['up'] = self.has_crossed_threshold(vals[0])
+        obstacle_map['front'] = self.has_crossed_threshold(vals[0])
         obstacle_map['left'] = self.has_crossed_threshold(vals[1])
         obstacle_map['right'] = self.has_crossed_threshold(vals[2])
-        obstacle_map['bottom'] = self.has_crossed_threshold(vals[3])
+        obstacle_map['front_left'] = self.has_crossed_threshold(vals[3])
+        obstacle_map['front_right'] = self.has_crossed_threshold(vals[4])
 
         self.logger.info('Obstacle map: %s', obstacle_map)
 
@@ -200,10 +208,16 @@ class ObstacleDetector(object):
 
         return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
 
+    def drive_actuators(self, obstacle_map):
+        self.motor_driver.left_motor(obstacle_map['left'])
+        self.motor_driver.right_motor(obstacle_map['right'])
+        self.motor_driver.center_motor(obstacle_map['front'] or obstacle_map['front_left'] or obstacle_map['front_right'])
+
     def start(self):
         """ This runs in the daemon """
         while True:
-            pass
+            self.drive_actuators(self.get_obstacle_map())
+            time.sleep(0.5)            
 
 obsdet = ObstacleDetector(logger)
 obsdet.start()
