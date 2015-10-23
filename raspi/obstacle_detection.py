@@ -18,6 +18,7 @@ MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
 THRESHOLD_USOUND_HIGH = 70
 
+
 class ObstacleDetector(object):
 
     def __init__(self, logger):
@@ -57,7 +58,7 @@ class ObstacleDetector(object):
 
         filtered_vals = []
         filtered_vals.append(latest_data[0])
-        #filtered_vals.append(medfilt(
+        # filtered_vals.append(medfilt(
         #    [x[0] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
             [x[1] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
@@ -65,9 +66,9 @@ class ObstacleDetector(object):
             [x[2] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(latest_data[3])
         filtered_vals.append(latest_data[4])
-        #filtered_vals.append(medfilt(
+        # filtered_vals.append(medfilt(
         #    [x[3] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
-        #filtered_vals.append(medfilt(
+        # filtered_vals.append(medfilt(
         #    [x[4] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
 
         self.logger.info('Filtered Values: %s', filtered_vals)
@@ -102,16 +103,16 @@ class ObstacleDetector(object):
 
         return obstacle_map
 
-     def drive_actuators(self, obstacle_map):
-        self.motor_driver.left_motor(max([obstacle_map['left'], obstacle_map['front_left']))
-        self.motor_driver.right_motor(max([obstacle_map['right'], obstacle_map['front_right']))
+    def drive_actuators(self, obstacle_map):
+        self.motor_driver.left_motor(max(obstacle_map['left'], obstacle_map['front_left']))
+        self.motor_driver.right_motor(max(obstacle_map['right'], obstacle_map['front_right']))
         self.motor_driver.center_motor(obstacle_map['front'])
 
     def start(self):
         """ This runs in the daemon """
         while True:
             self.drive_actuators(self.obstacle_map)
-            time.sleep(0.5)            
+            time.sleep(0.5)
 
 obsdet = ObstacleDetector(logger)
 obsdet.start()
