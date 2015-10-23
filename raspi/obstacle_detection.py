@@ -26,7 +26,7 @@ THRESHOLD_RIGHT = -160
 THRESHOLD_MID_LEFT = 90
 THRESHOLD_MID_RIGHT = -90
 
-MEDIAN_WINDOW = 5
+MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
 THRESHOLD_USOUND_HIGH = 70
 
@@ -68,7 +68,7 @@ class ObstacleDetector(object):
 
         filtered_vals = []
         filtered_vals.append(medfilt(
-            [x[0] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[0] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
             [x[1] for x in self.past_vals], MEDIAN_WINDOW)[2])
         filtered_vals.append(medfilt(
