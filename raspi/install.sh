@@ -26,11 +26,19 @@ sudo cp services/localizer-service.sh /etc/init.d/localizer
 sudo chmod +x /etc/init.d/localizer
 sudo insserv localizer
 
+sudo service obsdet stop
+sudo rm -f /home/pi/logs/obstacle_detection.log*
+touch /home/pi/logs/obstacle_detection.log
+sudo cp services/obsdet-service.sh /etc/init.d/obsdet
+sudo chmod +x /etc/init.d/obsdet
+sudo insserv obsdet
+
 sudo rm -f /home/pi/db/uart.db*
 sudo service tweet-ip start
 sudo service uart start
 sudo service navi start
 sudo service localizer start
+sudo service obsdet start
 
 cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/* /home/pi/db/*'
 cron_exists=$(sudo crontab -l | grep -F "$cron_cmd")
