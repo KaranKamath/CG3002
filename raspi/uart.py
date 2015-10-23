@@ -73,14 +73,14 @@ class UartHandler(object):
                          building, level, origin, destination)
 
     def read_data(self):
-        self.logger.info('Waiting for data...')
+        self.logger.info('Receiving data...')
         while True:
             data = self._serial_read_line()
             if data:
                 (packet_type, data) = self._parse_data(data)
                 self.db.insert_data(packet_type, data)
-                self.logger.info('Stored data [type: %s, data: %s]',
-                                 packet_type, data)
+                # self.logger.info('Stored data [type: %s, data: %s]',
+                #                  packet_type, data)
 
 
 uart = UartHandler(logger)

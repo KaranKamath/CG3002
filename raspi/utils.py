@@ -72,14 +72,3 @@ def dijkstra(graph, source, target):
     if path:
         path.append(source)
     return path[::-1]
-
-
-def stream_data(sid):
-    t_stmp = int(round(time.time() * 1000))
-    db_conn = db.DB()
-    while True:
-        data = db_conn.fetch_data(sid=sid, since=t_stmp)
-        if data:
-            t_stmp = data[-1][0]
-        for d in data:
-            yield d

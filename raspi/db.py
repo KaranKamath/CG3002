@@ -5,7 +5,9 @@ import time
 
 class DB(object):
     data_to_insert = []
-    batch_size = 1
+    batch_size = 2
+    initial_timestamp = 0
+    block_timeout = 0.1 # 100ms as data incoming at 10Hz
 
     def __init__(self, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
@@ -50,28 +52,22 @@ class DB(object):
         self.conn.close()
         self.conn = None
 
-    def insert_origin_and_destination(self, building, level, origin,
-                                      destination):
+    def insert_origin_and_destination(self, bldg, level, orig, dstn):
         self._open_conn()
         self.conn.execute('DELETE FROM nav_coords')
         query = 'INSERT INTO nav_coords values(?, ?, ?, ?)'
-        params = [int(building), int(level), int(origin), int(destination)]
+        params = [int(bldg), int(level), int(orig), int(dstn)]
         self.conn.execute(query, params)
         self._close_conn()
 
-    def fetch_origin_and_destination(self, blocking=False):
+    def fetch_origin_and_destination(self):
         query = 'SELECT * FROM nav_coords LIMIT 1'
         self._open_conn()
         data = list(self.conn.execute(query))
-        self._close_conn()
-        if not blocking:
-            return [str(d) for d in data[0]] if data else None
-
-        self._open_conn()
         while not data:
-            time.sleep(0.1)
+            time.sleep(self.block_timeout)
             data = list(self.conn.execute(query))
-        self._close_conn()
+        self._close_conn(commit=False)
         return [str(d) for d in data[0]]
 
     def insert_data(self, sid, raw_data):
@@ -87,7 +83,7 @@ class DB(object):
             self._close_conn()
             self.data_to_insert = []
 
-    def fetch_data(self, since=0, sid=None, auto_delete=False):
+    def fetch_data(self, since=0, sid=None):
         params = [since]
         query = 'SELECT * FROM sensor_data WHERE timestamp > ?'
         if sid is not None:
@@ -95,14 +91,12 @@ class DB(object):
             params.append(sid)
 
         self._open_conn()
-        ret_val = []
-        for row in self.conn.execute(query, params):
-            ret_val.append([row[0], row[1], json.loads(row[2])])
+        data = list(self.conn.execute(query, params))
+        while not data:
+            time.sleep(self.block_timeout)
+            data = list(self.conn.execute(query, params))
         self._close_conn(commit=False)
-
-        # if auto_delete:
-        #     self.delete_data([v[0] for v in ret_val])
-        return ret_val
+        return [[d[0], d[1], json.loads(d[2])] for d in data]
 
     def delete_data(self, t_stmps_to_delete):
         self._open_conn()
@@ -113,26 +107,23 @@ class DB(object):
         self.conn.execute('END TRANSACTION')
         self._close_conn()
 
-    def insert_location(self, x, y, heading, altitude, initial=False):
+    def insert_location(self, x, y, heading, altitude, is_initial=False):
         self._open_conn()
-        timestamp = 0 if initial else int(round(time.time() * 1000))
+        timestamp = self.initial_timestamp if is_initial else\
+            int(round(time.time() * 1000))
         query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
 
-    def fetch_location(self, blocking=False):
+    def fetch_location(self, allow_initial=False):
+        self._open_conn()
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
-        self._open_conn()
         data = list(self.conn.execute(query))
-        self._close_conn()
-        if not blocking:
-            return data[0] if data else None
-
-        self._open_conn()
-        while not data:
-            time.sleep(0.1)
+        while not data or (not allow_initial and
+                           data[0][0] == self.initial_timestamp):
+            time.sleep(self.block_timeout)
             data = list(self.conn.execute(query))
-        self._close_conn()
+        self._close_conn(commit=False)
         return data[0]
 
     def delete_locations(self):
@@ -141,8 +132,11 @@ class DB(object):
         self._close_conn()
 
 if __name__ == '__main__':
-    foo = DB()
-    print foo.fetch_origin_and_destination()
+    foo = DB('uart.db')
     foo.insert_origin_and_destination(1, 2, 23423, 24)
     print foo.fetch_origin_and_destination()
+    foo.insert_location(0, 0, 0, 0, True)
+    print foo.fetch_location(allow_initial=True)
+    time.sleep(0.1)
+    foo.insert_location(0, 0, 0, 0, False)
     print foo.fetch_location()
