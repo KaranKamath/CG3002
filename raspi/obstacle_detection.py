@@ -13,18 +13,6 @@ sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 DELTA_TIME = 1000  # 1 second
-LEFT = 90
-RIGHT = -90
-AROUND_LEFT = 180
-AROUND_RIGHT = -180
-STRAIGHT = 0
-
-THRESHOLD_STRAIGHT_LEFT = 20
-THRESHOLD_STRAIGHT_RIGHT = -20
-THRESHOLD_LEFT = 160
-THRESHOLD_RIGHT = -160
-THRESHOLD_MID_LEFT = 90
-THRESHOLD_MID_RIGHT = -90
 
 MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
@@ -85,9 +73,9 @@ class ObstacleDetector(object):
 
         return filtered_vals
 
-    def has_crossed_threshold(self, value):
+    def get_normalized_val(self, value):
         if 0 < value < THRESHOLD_USOUND_HIGH:
-            return True
+            return value * 100.0 / THRESHOLD_USOUND_HIGH
         return False
 
     @property
@@ -103,119 +91,17 @@ class ObstacleDetector(object):
 
         self.logger.info('Vals: %s', vals)
 
-        obstacle_map['front'] = self.has_crossed_threshold(vals[0])
-        obstacle_map['left'] = self.has_crossed_threshold(vals[1])
-        obstacle_map['right'] = self.has_crossed_threshold(vals[2])
-        obstacle_map['front_left'] = self.has_crossed_threshold(vals[3])
-        obstacle_map['front_right'] = self.has_crossed_threshold(vals[4])
+        obstacle_map['front'] = self.get_normalized_val(vals[0])
+        obstacle_map['left'] = self.get_normalized_val(vals[1])
+        obstacle_map['right'] = self.get_normalized_val(vals[2])
+        obstacle_map['front_left'] = self.get_normalized_val(vals[3])
+        obstacle_map['front_right'] = self.get_normalized_val(vals[4])
 
         self.logger.info('Obstacle map: %s', obstacle_map)
 
         return obstacle_map
 
-    def turn(self, current_angle, delta):
-        raw_final_angle = current_angle + (delta % 360)
-
-        if raw_final_angle > 180:
-            return -180 + (raw_final_angle - 180)
-
-        if raw_final_angle < -180:
-            return 180 + (180 + raw_final_angle)
-
-        return raw_final_angle
-
-    def apply_straight_policy(self, current_angle_recommendation, obstacle_map):
-        # No obstacle in front
-        if not obstacle_map['up']:
-            return current_angle_recommendation
-
-        # Obstacles all around
-        if obstacle_map['left'] and obstacle_map['right']:
-            return AROUND_LEFT
-
-        # Obstacle on the front and left but not right
-        if obstacle_map['left']:
-            return RIGHT
-
-        # Obstacle on the front and right but not left
-        if obstacle_map['right']:
-            return LEFT
-
-        # No obstacles on the side, but on the front
-        if current_angle_recommendation >= 0:
-            return LEFT
-        return RIGHT
-
-    def apply_left_turn_policy(self, current_angle_recommendation, obstacle_map):
-        # No obstacle on the left
-        if not obstacle_map['left']:
-            return current_angle_recommendation
-
-        # Obstacles all around
-        if obstacle_map['up'] and obstacle_map['right']:
-            return AROUND_LEFT
-
-        # Obstacle up front and left
-        if obstacle_map['up']:
-            return RIGHT
-
-        # Obstacle right and left, but not straight, or just the left
-        if current_angle_recommendation >= THRESHOLD_MID_LEFT:
-            return AROUND_LEFT
-
-        return STRAIGHT
-
-    def apply_right_turn_policy(self, current_angle_recommendation,
-                                obstacle_map):
-        # No obstacle on the right
-        if not obstacle_map['right']:
-            return current_angle_recommendation
-
-        # Obstacles all around
-        if obstacle_map['up'] and obstacle_map['left']:
-            return AROUND_RIGHT
-
-        # Obstacle up front and right, but not left
-        if obstacle_map['up']:
-            return LEFT
-
-        # Obstacle left and right, but not straight, or just the right
-        if current_angle_recommendation <= THRESHOLD_MID_RIGHT:
-            return AROUND_RIGHT
-
-        return STRAIGHT
-
-    def apply_turn_around_policy(self, current_angle_recommendation,
-                                 obstacle_map):
-        if current_angle_recommendation >= 0:
-            return AROUND_LEFT
-        return AROUND_RIGHT
-
-    def recommend(self, current_angle_recommendation):
-        obstacle_map = self.get_obstacle_map(self.get_current_data())
-
-        if obstacle_map is None:
-            self.logger.info(
-                'Defaulting to return without changing recommendation')
-            return current_angle_recommendation
-
-        self.logger.info('Angle to modify: %s', current_angle_recommendation)
-
-        if THRESHOLD_STRAIGHT_RIGHT <= current_angle_recommendation <= THRESHOLD_STRAIGHT_LEFT:
-            self.logger.info('Applying straight policy...')
-            return self.apply_straight_policy(current_angle_recommendation, obstacle_map)
-        elif THRESHOLD_RIGHT <= current_angle_recommendation < THRESHOLD_STRAIGHT_RIGHT:
-            self.logger.info('Applying right policy...')
-            return self.apply_right_turn_policy(current_angle_recommendation, obstacle_map)
-        elif THRESHOLD_STRAIGHT_LEFT < current_angle_recommendation <= THRESHOLD_LEFT:
-            self.logger.info('Applying left policy...')
-            return self.apply_left_turn_policy(current_angle_recommendation, obstacle_map)
-
-        self.logger.info('Applying turn around policy...')
-
-        return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
-
-    def drive_actuators(self, obstacle_map):
+     def drive_actuators(self, obstacle_map):
         self.motor_driver.left_motor(obstacle_map['left'])
         self.motor_driver.right_motor(obstacle_map['right'])
         self.motor_driver.center_motor(obstacle_map['front'])
