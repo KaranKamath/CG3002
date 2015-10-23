@@ -9,10 +9,11 @@ class DB(object):
     initial_timestamp = 0
     block_timeout = 0.1 # 100ms as data incoming at 10Hz
 
-    def __init__(self, db_name='/home/pi/db/uart.db'):
+    def __init__(self, logger, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
         self.db_name = db_name
+        self.log = logger
         self._setup()
 
     def _setup(self):
@@ -64,8 +65,13 @@ class DB(object):
         query = 'SELECT * FROM nav_coords LIMIT 1'
         self._open_conn()
         data = list(self.conn.execute(query))
+        blk_counter = 0
         while not data:
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= 10:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query))
         self._close_conn(commit=False)
         return [str(d) for d in data[0]]
@@ -92,8 +98,13 @@ class DB(object):
 
         self._open_conn()
         data = list(self.conn.execute(query, params))
+        blk_counter = 0
         while not data:
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= 10:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query, params))
         self._close_conn(commit=False)
         return [[d[0], d[1], json.loads(d[2])] for d in data]
@@ -119,9 +130,14 @@ class DB(object):
         self._open_conn()
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         data = list(self.conn.execute(query))
+        blk_counter = 0
         while not data or (not allow_initial and
                            data[0][0] == self.initial_timestamp):
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= 10:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query))
         self._close_conn(commit=False)
         return data[0]

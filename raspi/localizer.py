@@ -27,7 +27,7 @@ class Localizer(object):
     median_window = []
 
     def __init__(self, logger, init_x=0, init_y=0):
-        self.db = DB()
+        self.db = DB(logger)
         self.log = logger
 
     def _get_altitude(self, data):
