@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import time
 import logging
+import sys
 from scipy.signal import medfilt
 from db import DB
 from utils import CommonLogger, init_logger
