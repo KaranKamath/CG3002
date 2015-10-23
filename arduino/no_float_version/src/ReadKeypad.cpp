@@ -15,7 +15,7 @@ char keys[ROWS][COLS] = {
 	{'*','0','#'}
 };
 byte rowPins[ROWS] = {22, 24, 26, 28}; 
-byte colPins[COLS] = {30, 32, 34};
+byte colPins[COLS] = {31, 32, 34};
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS ); 
 void setupKeypad(void) {
@@ -28,7 +28,7 @@ void readKeypad(void) {
 	byte len = 0;
 	char keydata[40];
 	char ack [SIZE_ACK+2];
-/*	
+
 	while (1) {
 		key = keypad.getKey();			
 		if (key != NO_KEY) {
@@ -54,8 +54,8 @@ void readKeypad(void) {
 			}
 		}	
 	}
-*/	
-	strcpy(keydata, "1*2*1*10\n");
+	
+	//strcpy(keydata, "1*2*1*10\n");
 	Serial.println(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {

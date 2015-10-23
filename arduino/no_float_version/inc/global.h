@@ -28,6 +28,8 @@
 #define OFFSETAM 1
 #define OFFSETGY 7
 
+#define RESET_PIN 2
+
 typedef struct {
 	byte id;
 	int data[MAX_NUM_DATA];

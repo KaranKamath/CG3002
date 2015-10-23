@@ -12,9 +12,11 @@
 #include "global.h"
 #include "NewPing.h"
 
-#define NUM_SONAR 1
-#define TRIGGER_UP 12
-#define ECHO_UP 11
+#define NUM_SONAR 2
+#define TRIGGER_DOWN 12
+#define ECHO_DOWN 11
+#define TRIGGER_UP 4
+#define ECHO_UP 3
 #define MAX_DISTANCE 300
 
 #define ITERATIONS 5
