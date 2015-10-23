@@ -98,6 +98,8 @@ class ObstacleDetector(object):
 
         obstacle_map = {}
 
+        self.logger.info('Vals: %s', vals)
+
         obstacle_map['front'] = self.has_crossed_threshold(vals[0])
         obstacle_map['left'] = self.has_crossed_threshold(vals[1])
         obstacle_map['right'] = self.has_crossed_threshold(vals[2])
