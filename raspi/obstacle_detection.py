@@ -26,7 +26,7 @@ THRESHOLD_MID_RIGHT = -90
 
 MEDIAN_WINDOW = 5
 MAX_SENSOR_VAL = 301
-
+THRESHOLD_USOUND_HIGH = 70
 
 class ObstacleDetector(object):
 
@@ -81,7 +81,7 @@ class ObstacleDetector(object):
         return filtered_vals
 
     def has_crossed_threshold(self, value):
-        if 0 < value < 100:
+        if 0 < value < THRESHOLD_USOUND_HIGH:
             return True
         return False
 
