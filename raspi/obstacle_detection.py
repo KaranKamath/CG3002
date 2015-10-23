@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import time
 import logging
+import sys
 from scipy.signal import medfilt
 from db import DB
 from utils import CommonLogger, init_logger
@@ -25,7 +26,7 @@ THRESHOLD_RIGHT = -160
 THRESHOLD_MID_LEFT = 90
 THRESHOLD_MID_RIGHT = -90
 
-MEDIAN_WINDOW = 5
+MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
 THRESHOLD_USOUND_HIGH = 70
 
@@ -67,15 +68,15 @@ class ObstacleDetector(object):
 
         filtered_vals = []
         filtered_vals.append(medfilt(
-            [x[0] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[0] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[1] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[1] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[2] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[2] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[3] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[3] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[4] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[4] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
 
         self.logger.info('Filtered Values: %s', filtered_vals)
 
@@ -96,6 +97,8 @@ class ObstacleDetector(object):
             return None
 
         obstacle_map = {}
+
+        self.logger.info('Vals: %s', vals)
 
         obstacle_map['front'] = self.has_crossed_threshold(vals[0])
         obstacle_map['left'] = self.has_crossed_threshold(vals[1])
@@ -217,7 +220,7 @@ class ObstacleDetector(object):
     def start(self):
         """ This runs in the daemon """
         while True:
-            self.drive_actuators(self.get_obstacle_map())
+            self.drive_actuators(self.obstacle_map)
             time.sleep(0.5)            
 
 obsdet = ObstacleDetector(logger)
