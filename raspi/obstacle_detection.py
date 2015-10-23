@@ -215,7 +215,7 @@ class ObstacleDetector(object):
     def drive_actuators(self, obstacle_map):
         self.motor_driver.left_motor(obstacle_map['left'])
         self.motor_driver.right_motor(obstacle_map['right'])
-        self.motor_driver.center_motor(obstacle_map['front'] or obstacle_map['front_left'] or obstacle_map['front_right'])
+        self.motor_driver.center_motor(obstacle_map['front'])
 
     def start(self):
         """ This runs in the daemon """
