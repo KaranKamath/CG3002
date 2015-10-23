@@ -25,6 +25,8 @@ class Navigator(object):
 
     ANGLE_THRESHOLD = 15
     DISTANCE_THRESHOLD = 75
+    LAX_ANGLE_THRESHOLD = 90
+    LAX_DISTANCE_THRESHOLD = 155
     location_tstmp = 0
 
     def __init__(self, logger):
@@ -48,32 +50,13 @@ class Navigator(object):
 
     @property
     def user_location(self):
-        t_stmp, x, y, heading, alt = self.db.fetch_location(True)
-        while t_stmp == 0:
-            time.sleep(0.5)
-            t_stmp, x, y, heading, alt = self.db.fetch_location(True)
-        return (x, y, heading, alt)
-
-    def start(self):
-        self._wait_for_origin_and_destination()
-        self._get_map()
-        self._generate_path()
-        self._acquire_next_node()
-        while not self.navigation_finished:
-            self._navigate_to_next_node()
-            time.sleep(0.5)
-
-    def stop(self):
-        self.navigation_finished = True
-        self.current_prompt = PromptDirn.end
-        self.audio.prompt(self.current_prompt)
-        self.motors.prompt(self.current_prompt)
+        ts, x, y, h, alt = self.db.fetch_location(allow_initial=False)
+        return (x, y, h, alt)
 
     def _wait_for_origin_and_destination(self):
         self.log.info('Waiting for origin and destination...')
-        bldg, level, orig, dest = self.db.fetch_origin_and_destination(True)
-        self.log.info('Got bldg: %s, level: %s, orig: %s, dest: %s',
-                      bldg, level, orig, dest)
+        bldg, level, orig, dest = self.db.fetch_origin_and_destination()
+        self.log.info('Got %s-%s-%s-%s', bldg, level, orig, dest)
         self.building = bldg
         self.level = level
         self.origin = orig
@@ -84,7 +67,7 @@ class Navigator(object):
         self.north = self.maps.north_heading(self.building, self.level)
         self.db.insert_location(self.graph[self.origin]['x'],
                                 self.graph[self.origin]['y'],
-                                self.north, 0, True)
+                                self.north, 0, is_initial=True)
 
     def _generate_path(self):
         self.log.info('Generating path...')
@@ -111,10 +94,11 @@ class Navigator(object):
                                             self.next_node['x'],
                                             self.next_node['y'],
                                             heading)
+
         angle = self.obstacle_detector.recommend(angle)
         self.log.info('Next node %s @[%scm, %sdeg]', self.next_node_id,
                       dist, angle)
-        if dist < self.DISTANCE_THRESHOLD:
+        if self._node_reached(dist, angle):
             self.audio.prompt_node_reached(self.next_node_id)
             self.log.info('Reached node %s', self.next_node_id)
             self.next_node_idx += 1
@@ -126,6 +110,10 @@ class Navigator(object):
                 self._navigate_to_next_node()
         else:
             self._generate_prompt(angle)
+
+    def _node_reached(self, dist, angle):
+        node_reached = (dist < self.DISTANCE_THRESHOLD)
+        return node_reached
 
     def _calc_directions(self, x, y, node_x, node_y, heading):
         distance = int(round(euclidean_dist(node_x, node_y, x, y)))
@@ -151,6 +139,21 @@ class Navigator(object):
             self.current_prompt = new_prompt
             self.audio.prompt(new_prompt)
             self.motors.prompt(new_prompt)
+
+    def start(self):
+        self._wait_for_origin_and_destination()
+        self._get_map()
+        self._generate_path()
+        self._acquire_next_node()
+        while not self.navigation_finished:
+            self._navigate_to_next_node()
+            time.sleep(0.5)
+
+    def stop(self):
+        self.navigation_finished = True
+        self.current_prompt = PromptDirn.end
+        self.audio.prompt(self.current_prompt)
+        self.motors.prompt(self.current_prompt)
 
 
 nav = Navigator(logger)

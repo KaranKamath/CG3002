@@ -107,5 +107,5 @@ class Localizer(object):
             time.sleep(0.2)
 
 
-generator = Localizer(logger)
-generator.start()
+localizer = Localizer(logger)
+localizer.start()

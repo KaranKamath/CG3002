@@ -2,6 +2,13 @@ import time
 import logging
 from scipy.signal import medfilt
 from db import DB
+from utils import CommonLogger, init_logger
+
+
+LOG_FILENAME = '/home/pi/logs/localizer.log'
+logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
+sys.stdout = CommonLogger(logger, logging.INFO)
+sys.stderr = CommonLogger(logger, logging.ERROR)
 
 DELTA_TIME = 1000  # 1 second
 LEFT = 90
@@ -193,5 +200,10 @@ class ObstacleDetector(object):
 
         return self.apply_turn_around_policy(current_angle_recommendation, obstacle_map)
 
-if __name__ == "__main__":
-    obj = ObstacleDetector(DB(), logging.getLogger(__name__), LOG_FILENAME)
+    def start(self):
+        """ This runs in the daemon """
+        while True:
+            pass
+
+obsdet = ObstacleDetector(logger)
+obsdet.start()
