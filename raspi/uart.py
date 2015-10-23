@@ -20,7 +20,7 @@ class UartHandler(object):
                  baud_rate=9600, timeout=1):
         self.ser = serial.Serial(serial_line, baud_rate, timeout=timeout)
         self.logger = logger
-        self.db = DB()
+        self.db = DB(logger)
         self.audio = AudioDriver()
         self.logger.info('Opening serial line')
 

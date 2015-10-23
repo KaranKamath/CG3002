@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import time
+from utils import now
 
 
 class DB(object):
@@ -8,11 +9,13 @@ class DB(object):
     batch_size = 2
     initial_timestamp = 0
     block_timeout = 0.1 # 100ms as data incoming at 10Hz
+    timeout_log_offset = 20
 
-    def __init__(self, db_name='/home/pi/db/uart.db'):
+    def __init__(self, logger, db_name='/home/pi/db/uart.db'):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
         self.db_name = db_name
+        self.log = logger
         self._setup()
 
     def _setup(self):
@@ -64,15 +67,20 @@ class DB(object):
         query = 'SELECT * FROM nav_coords LIMIT 1'
         self._open_conn()
         data = list(self.conn.execute(query))
+        blk_counter = 0
         while not data:
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= self.timeout_log_offset:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query))
         self._close_conn(commit=False)
         return [str(d) for d in data[0]]
 
     def insert_data(self, sid, raw_data):
         data = json.dumps(raw_data)
-        timestamp = int(round(time.time() * 1000))
+        timestamp = now()
         self.data_to_insert.append([timestamp, sid, data])
         if len(self.data_to_insert) >= self.batch_size:
             self._open_conn()
@@ -92,8 +100,13 @@ class DB(object):
 
         self._open_conn()
         data = list(self.conn.execute(query, params))
+        blk_counter = 0
         while not data:
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= self.timeout_log_offset:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query, params))
         self._close_conn(commit=False)
         return [[d[0], d[1], json.loads(d[2])] for d in data]
@@ -109,8 +122,7 @@ class DB(object):
 
     def insert_location(self, x, y, heading, altitude, is_initial=False):
         self._open_conn()
-        timestamp = self.initial_timestamp if is_initial else\
-            int(round(time.time() * 1000))
+        timestamp = self.initial_timestamp if is_initial else now()
         query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
         self.conn.execute(query, [timestamp, x, y, heading, altitude])
         self._close_conn()
@@ -119,9 +131,14 @@ class DB(object):
         self._open_conn()
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         data = list(self.conn.execute(query))
+        blk_counter = 0
         while not data or (not allow_initial and
                            data[0][0] == self.initial_timestamp):
             time.sleep(self.block_timeout)
+            blk_counter += 1
+            if blk_counter >= self.timeout_log_offset:
+                self.log.info("Still waiting on data...")
+                blk_counter = 0
             data = list(self.conn.execute(query))
         self._close_conn(commit=False)
         return data[0]

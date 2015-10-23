@@ -3,6 +3,7 @@ import numpy as np
 from db import DB
 from scipy import signal
 from math import radians, cos, sin
+from utils import now
 
 STEP_LENGTH = 50  # cm
 FILTER_ORDER = 3
@@ -25,10 +26,6 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = signal.lfilter(b, a, data)
     return y
-
-
-def now():
-    return int(round(time.time() * 1000))
 
 
 class LocationApproximator(object):

@@ -37,6 +37,10 @@ def euclidean_dist(x1, y1, x2, y2):
     return sqrt((int(x1) - int(x2)) ** 2 + (int(y1) - int(y2)) ** 2)
 
 
+def now():
+    return int(round(time.time() * 1000))
+
+
 def dijkstra(graph, source, target):
     """Dijkstra's shortest path algorithm"""
     queue = PriorityQueue()

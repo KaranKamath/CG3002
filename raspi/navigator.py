@@ -32,7 +32,7 @@ class Navigator(object):
     def __init__(self, logger):
         self.log = logger
         self.log.info('Starting navigator...')
-        self.db = DB()
+        self.db = DB(logger)
         self.maps = MapsRepo()
         self.audio = AudioDriver()
         self.current_prompt = None
