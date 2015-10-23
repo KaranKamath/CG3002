@@ -70,13 +70,13 @@ class ObstacleDetector(object):
         filtered_vals.append(medfilt(
             [x[0] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[1] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[1] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[2] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[2] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[3] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[3] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
         filtered_vals.append(medfilt(
-            [x[4] for x in self.past_vals], MEDIAN_WINDOW)[2])
+            [x[4] for x in self.past_vals], MEDIAN_WINDOW)[MEDIAN_WINDOW / 2])
 
         self.logger.info('Filtered Values: %s', filtered_vals)
 
