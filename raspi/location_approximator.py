@@ -113,6 +113,7 @@ class LocationApproximator(object):
         
         peak_vals = [low_passed_gyro_x[x] for x in peak_indices]
         fall_vals = [low_passed_gyro_x[x] for x in fall_indices]
+        self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
         self.logger.info('Gyro X Peaks: %s', peak_vals)
         self.logger.info('Gyro X Falls: %s', fall_vals)
 #        self.logger.info('New X: %s', str(self.x))
