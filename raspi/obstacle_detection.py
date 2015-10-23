@@ -25,6 +25,7 @@ class ObstacleDetector(object):
         self.db = DB()
         self.logger = logger
         self.motor_driver = MotorDriver()
+        self.logger.info('Starting up obstacle detector...')
 
     def get_current_data(self):
         one_second_ago = int(round(time.time() * 1000) - DELTA_TIME)
