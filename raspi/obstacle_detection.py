@@ -16,7 +16,8 @@ DELTA_TIME = 1  # 1 second
 
 MEDIAN_WINDOW = 3
 MAX_SENSOR_VAL = 301
-THRESHOLD_USOUND_HIGH = 70
+THRESHOLD_USOUND_HIGH = 100
+THRESHOLD_IR_HIGH = 70
 
 
 class ObstacleDetector(object):
@@ -75,7 +76,13 @@ class ObstacleDetector(object):
 
         return filtered_vals
 
-    def get_normalized_val(self, value):
+    def get_normalized_ir_val(self, value):
+        if 0 < value < THRESHOLD_IR_HIGH:
+            return 100
+            # return 101 - (50 + (value * 50.0 / THRESHOLD_USOUND_HIGH))
+        return False
+
+    def get_normalized_usound_val(self, value):
         if 0 < value < THRESHOLD_USOUND_HIGH:
             return 100
             # return 101 - (50 + (value * 50.0 / THRESHOLD_USOUND_HIGH))
@@ -94,11 +101,11 @@ class ObstacleDetector(object):
 
         self.logger.info('Vals: %s', vals)
 
-        obstacle_map['front'] = self.get_normalized_val(vals[0])
-        obstacle_map['left'] = self.get_normalized_val(vals[1])
-        obstacle_map['right'] = self.get_normalized_val(vals[2])
-        obstacle_map['front_left'] = self.get_normalized_val(vals[3])
-        obstacle_map['front_right'] = self.get_normalized_val(vals[4])
+        obstacle_map['front'] = self.get_normalized_usound_val(vals[0])
+        obstacle_map['left'] = self.get_normalized_ir_val(vals[1])
+        obstacle_map['right'] = self.get_normalized_ir_val(vals[2])
+        obstacle_map['front_left'] = self.get_normalized_usound_val(vals[3])
+        obstacle_map['front_right'] = self.get_normalized_usound_val(vals[4])
 
         self.logger.info('Obstacle map: %s', obstacle_map)
 

@@ -7,6 +7,7 @@ from math import atan2, pi
 from scipy.signal import medfilt
 from db import DB
 from location_approximator import LocationApproximator
+from step_counter import StepCounter
 from utils import CommonLogger, init_logger, now
 from vector_ops import dot_3d, cross_3d, normalize_3d
 from directions_utils import convert_heading_to_horizontal_axis
@@ -63,13 +64,17 @@ class Localizer(object):
         return filtered_heading
 
     def _get_coords(self, data, heading):
-        self.loc_approx.append_to_buffers(data, heading)
-        if self.coords_offset == self.coords_delay:
-            self.coords_offset = 0
-            return self.loc_approx.get_new_position()
-        else:
-            self.coords_offset += 1
-            return self.loc_approx.get_position()
+        x, y = None, None
+        for d in data:
+            x, y = self.sc.update_coords(d, heading)
+        return x, y
+        # self.loc_approx.append_to_buffers(data, heading)
+        # if self.coords_offset == self.coords_delay:
+        #     self.coords_offset = 0
+        #     return self.loc_approx.get_new_position()
+        # else:
+        #     self.coords_offset += 1
+        #     return self.loc_approx.get_position()
 
     def _process_imu(self, imu_data):
         if not imu_data:
@@ -79,8 +84,8 @@ class Localizer(object):
         heading = self._get_heading(imu_data)
         x, y = self._get_coords(imu_data, heading)
         self.db.insert_location(x, y, heading, altitude)
-        # self.log.info('Updated location to %s, %s, %s, %s',
-                    #   x, y, heading, altitude)
+        self.log.info('Updated location to %s, %s, %s, %s',
+                      x, y, heading, altitude)
 
     def _get_latest_imu_readings(self):
         data = self.db.fetch_data(sid=0, since=self.imu_timestamp)
@@ -98,9 +103,10 @@ class Localizer(object):
 
     def start(self):
         self._initalize_location()
-        self.loc_approx = LocationApproximator(self.init_x,
-                                               self.init_y,
-                                               self.log)
+        # self.loc_approx = LocationApproximator(self.init_x,
+        #                                        self.init_y,
+        #                                        self.log)
+        self.sc = StepCounter(self.init_x, self.init_y, self.log)
         while True:
             data = self._get_latest_imu_readings()
             self._process_imu(data)
