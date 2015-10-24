@@ -43,6 +43,9 @@ class LocationApproximator(object):
         self.calibrated = False
         self.threshold = THRESHOLD_GYRO
         self.gyro_x_buffer = []
+        self.last_gyro_x_buffer = []
+        self.last_gyro_x_peaks = 0
+        self.last_gyro_x_falls = 0
 
     def is_calibrated(self):
         return self.calibrated
@@ -70,17 +73,30 @@ class LocationApproximator(object):
         low_passed_vals = butter_lowpass_filter(
             cumulative_buffer, CUTOFF, FS, FILTER_ORDER)
 
+        
+        cumulative_gyro_buffer = self.last_gyro_x_buffer + self.gyro_x_buffer
+
         low_passed_gyro_x = butter_lowpass_filter(
-            self.gyro_x_buffer, 2, FS, FILTER_ORDER)
+            cumulative_gyro_buffer, 2, FS, FILTER_ORDER)
 
         peak_indices = signal.argrelextrema(low_passed_gyro_x, np.greater)[0]
         fall_indices = signal.argrelextrema(low_passed_gyro_x, np.less)[0]
         
-        peak_vals = [low_passed_gyro_x[x] for x in peak_indices if low_passed_gyro_x[x] > 0.3]
-        fall_vals = [low_passed_gyro_x[x] for x in fall_indices if low_passed_gyro_x[x] < -0.3]
+        peak_vals = [low_passed_gyro_x[x] for x in peak_indices if low_passed_gyro_x[x] > 0.1]
+        fall_vals = [low_passed_gyro_x[x] for x in fall_indices if low_passed_gyro_x[x] < -0.1]
+        if len(peak_vals) > self.last_gyro_x_peaks:
+            self.last_gyro_x_peaks = len(peak_vals) - self.last_gyro_x_peaks
+        else:
+            self.last_gyro_x_peaks = 0
+
+        if len(fall_vals) > self.last_gyro_x_falls:
+            self.last_gyro_x_falls = len(fall_vals) - self.last_gyro_x_falls
+        else:
+            self.last_gyro_x_falls = 0
+
         self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
-        self.logger.info('Gyro X Peaks: %s', len(peak_vals))
-        self.logger.info('Gyro X Falls: %s', len(fall_vals))
+        self.logger.info('Gyro New X Peaks: %s', new_peaks)
+        self.logger.info('Gyro New X Falls: %s', new_falls)
 
         # self.logger.info('\nFiltered values: %s', low_passed_vals)
 
@@ -121,8 +137,9 @@ class LocationApproximator(object):
 
     def copy_and_clear_buffers(self):
         self.last_batch_headings = self.heading_buffer
-        self.heading_buffer = []
         self.last_batch_data_buffer = self.data_buffer
+        self.last_gyro_x_buffer = self.gyro_x_buffer
+        self.heading_buffer = []
         self.data_buffer = []
         self.gyro_x_buffer = []
 
