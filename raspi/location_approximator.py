@@ -77,7 +77,7 @@ class LocationApproximator(object):
         fall_indices = signal.argrelextrema(low_passed_gyro_x, np.less)[0]
         
         peak_vals = [low_passed_gyro_x[x] for x in peak_indices if low_passed_gyro_x[x] > 0.3]
-        fall_vals = [low_passed_gyro_x[x] for x in fall_indices if low_passed_gyro_x[x] < -0.3]]
+        fall_vals = [low_passed_gyro_x[x] for x in fall_indices if low_passed_gyro_x[x] < -0.3]
         self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
         self.logger.info('Gyro X Peaks: %s', len(peak_vals))
         self.logger.info('Gyro X Falls: %s', len(fall_vals))
