@@ -95,8 +95,8 @@ class LocationApproximator(object):
             self.last_gyro_x_falls = 0
 
         self.logger.info('Gyro Low Passed: %s', low_passed_gyro_x)
-        self.logger.info('Gyro New X Peaks: %s', new_peaks)
-        self.logger.info('Gyro New X Falls: %s', new_falls)
+        self.logger.info('Gyro New X Peaks: %s', self.last_gyro_x_peaks)
+        self.logger.info('Gyro New X Falls: %s', self.last_gyro_x_falls)
 
         # self.logger.info('\nFiltered values: %s', low_passed_vals)
 
