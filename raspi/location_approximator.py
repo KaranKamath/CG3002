@@ -98,6 +98,10 @@ class LocationApproximator(object):
         self.logger.info('Gyro New X Peaks: %s', self.last_gyro_x_peaks)
         self.logger.info('Gyro New X Falls: %s', self.last_gyro_x_falls)
 
+        low_passed_gyro_x = butter_lowpass_filter(
+            self.gyro_x_buffer, 2, FS, FILTER_ORDER)
+
+        self.logger.info('Vals This Batch: %s', low_passed_gyro_x)
         # self.logger.info('\nFiltered values: %s', low_passed_vals)
 
         peak_indices = signal.argrelmax(low_passed_vals)[0]
