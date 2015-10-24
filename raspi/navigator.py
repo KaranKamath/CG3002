@@ -104,7 +104,7 @@ class Navigator(object):
                 self._navigate_to_next_node()
         else:
             new_prompt = self._generate_prompt(angle)
-            self._play_prompt(new_prompt)
+            self._play_prompt(new_prompt, angle)
             self.current_prompt = new_prompt
 
     def _node_reached(self, dist, angle):
@@ -133,15 +133,15 @@ class Navigator(object):
             new_prompt = PromptDirn.right
         return new_prompt
 
-    def _play_prompt(self, prompt):
+    def _play_prompt(self, prompt, angle):
         if self.current_prompt is None or self.current_prompt != prompt:
-            self.audio.prompt(prompt)
+            self.audio.prompt(prompt, angle)
             self.audio_offset = 0
         if prompt == PromptDirn.left or prompt == PromptDirn.right:
             self.audio_offset += 1
             if self.audio_offset == self.audio_delay:
                 self.audio_offset = 0
-                self.audio.prompt(prompt)
+                self.audio.prompt(prompt, angle)
 
     def start(self):
         self._wait_for_origin_and_destination()

@@ -20,13 +20,19 @@ class AudioDriver(object):
         self.devnull = open(os.devnull, 'w')
         self.proc = None
 
-    def prompt(self, prompt_type):
+    def prompt(self, prompt_type, val=None):
         if self.proc:
             self.proc.kill()
-        self.proc = Popen(
-            [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]],
-            stdout=self.devnull, stderr=self.devnull
-        )
+        if val is None or prompt_type == PromptDirn.straight:
+            self.proc = Popen(
+                [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]],
+                stdout=self.devnull, stderr=self.devnull
+            )
+        else:
+            args = [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]]
+            for digit in str(val):
+                args.append(BASE_AUDIO_DIR + digit + '.wav')
+            call(args, stdout=self.devnull, stderr=self.devnull)
 
     def prompt_node_reached(self, node_id):
         args = [self.PLAYER, BASE_AUDIO_DIR + 'node_reached.wav']
