@@ -8,7 +8,7 @@
 #include "UartComm.h"
 #include "ReadKeypad.h"
 
-#define DELAY_UART 100
+#define DELAY_UART 50
 #define BAUD_RATE 9600
 #define SIZE_ACK 3
 
@@ -46,8 +46,8 @@ void sendData(void *p) {
 				received.data[3+OFFSETAM], received.data[4+OFFSETAM], received.data[5+OFFSETAM],
 				received.data[0+OFFSETGY], received.data[1+OFFSETGY], received.data[2+OFFSETGY]);
 			} else if (received.id == IDOBSTACLE) {
-				snprintf(toSend, sizeof(toSend), "%d|%d,%d,%d,%d\n", IDOBSTACLE,
-				received.data[0], received.data[1], received.data[2], received.data[3]);
+				snprintf(toSend, sizeof(toSend), "%d|%d,%d,%d,%d,%d\n", IDOBSTACLE,
+				received.data[0], received.data[1], received.data[2], received.data[3], received.data[4]);
 			}
 			
 			Serial.print(toSend);

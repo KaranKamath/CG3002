@@ -12,15 +12,20 @@
 #include "global.h"
 #include "NewPing.h"
 
-#define NUM_SONAR 2
-#define TRIGGER_DOWN 12
-#define ECHO_DOWN 11
+#define NUM_SONAR 3
+#define TRIGGER_UP_LEFT 12
+#define ECHO_UP_LEFT 11
 #define TRIGGER_UP 4
 #define ECHO_UP 3
+#define TRIGGER_UP_RIGHT 8
+#define ECHO_UP_RIGHT 9
+#define TRIGGER_HAND 7
+#define ECHO_HAND 6 
 #define MAX_DISTANCE 300
 
-#define ITERATIONS 5
+#define ITERATIONS 3
 #define OBSTACLE_THRESHOLD 80
+#define OBSTACLE_HAND 70
 #define MAX_PWM_VOLTAGE 127
 #define IR_LEFT 15
 #define IR_RIGHT 14
