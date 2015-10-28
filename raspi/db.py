@@ -8,7 +8,7 @@ class DB(object):
     data_to_insert = []
     batch_size = 2
     initial_timestamp = 0
-    block_timeout = 0.1 # 100ms as data incoming at 10Hz
+    block_timeout = 0.1  # 100ms as data incoming at 10Hz
     timeout_log_offset = 20
 
     def __init__(self, logger, db_name='/home/pi/db/uart.db'):
@@ -38,10 +38,12 @@ class DB(object):
         """)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS
-            nav_coords(building INTEGER,
-                       level INTEGER,
-                       origin INTEGER,
-                       destination INTEGER)
+            nav_coords(origin_building INTEGER,
+                       origin_level INTEGER,
+                       origin_node INTEGER,
+                       destination_building INTEGER,
+                       destination_level INTEGER,
+                       destination_node INTEGER)
         """)
         self.conn.execute('PRAGMA journal_mode = WAL')
         self._close_conn()
@@ -55,11 +57,13 @@ class DB(object):
         self.conn.close()
         self.conn = None
 
-    def insert_origin_and_destination(self, bldg, level, orig, dstn):
+    def insert_origin_and_destination(self, orig_bldg, orig_level, orig_node,
+                                      dstn_bldg, dstn_level, dstn_node):
         self._open_conn()
         self.conn.execute('DELETE FROM nav_coords')
-        query = 'INSERT INTO nav_coords values(?, ?, ?, ?)'
-        params = [int(bldg), int(level), int(orig), int(dstn)]
+        query = 'INSERT INTO nav_coords values(?, ?, ?, ?, ?, ?)'
+        params = [int(orig_bldg), int(orig_level), int(orig_node),
+                  int(dstn_bldg), int(dstn_level), int(dstn_node)]
         self.conn.execute(query, params)
         self._close_conn()
 

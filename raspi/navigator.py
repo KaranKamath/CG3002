@@ -52,12 +52,12 @@ class Navigator(object):
 
     def _wait_for_origin_and_destination(self):
         self.log.info('Waiting for origin and destination...')
-        bldg, level, orig, dest = self.db.fetch_origin_and_destination()
-        self.log.info('Got %s-%s-%s-%s', bldg, level, orig, dest)
-        self.building = bldg
-        self.level = level
-        self.origin = orig
-        self.destination = dest
+        data = self.db.fetch_origin_and_destination()
+        self.o_bldg, self.o_level, self.o_node = data[0], data[1], data[2]
+        self.d_bldg, self.d_level, self.d_node = data[3], data[4], data[5]
+        self.log.info('Got %s-%s-%s to %s-%s-%s',
+                      self.o_bldg, self.o_level, self.o_node,
+                      self.d_bldg, self.d_level, self.d_node)
 
     def _get_map(self):
         self.graph = self.maps.map(self.building, self.level)

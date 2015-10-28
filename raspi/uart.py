@@ -66,19 +66,25 @@ class UartHandler(object):
         while not _input:
             _input = self._serial_read_line()
         self.ser.write('ACK')
-        building, level, origin, destination = _input.split('*')
-        self.db.insert_origin_and_destination(building, level, origin,
-                                              destination)
-        self.logger.info('Got [Building %s, Level %s, Start %s, End %s]',
-                         building, level, origin, destination)
+        o_bldg, o_level, o_node, d_bldg, d_level, d_node = _input.split('*')
+        self.db.insert_origin_and_destination(o_bldg, o_level, o_node,
+                                              d_bldg, d_level, d_node)
+        self.logger.info('Got Origin [Building %s, Level %s, Node %s]',
+                         o_bldg, o_level, o_node)
+        self.logger.info('Got Destination [Building %s, Level %s, Node %s]',
+                         d_bldg, d_level, d_node)
 
     def read_data(self):
         self.logger.info('Receiving data...')
+        log_counter = 0
         while True:
             data = self._serial_read_line()
             if data:
                 (packet_type, data) = self._parse_data(data)
                 self.db.insert_data(packet_type, data)
+                if log_counter > 50:
+                    self.logger.info('Receiving data...')
+                    log_counter = 0
                 # self.logger.info('Stored data [type: %s, data: %s]',
                 #                  packet_type, data)
 
