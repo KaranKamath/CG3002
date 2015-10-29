@@ -8,18 +8,18 @@
 #include "UartComm.h"
 #include "ReadKeypad.h"
 
-#define DELAY_UART 50
+#define DELAY_UART 100
 #define BAUD_RATE 9600
 #define SIZE_ACK 3
 
 void setupUart() {
-	Serial1.begin(BAUD_RATE);
+//	Serial1.begin(BAUD_RATE);
 	handshake();
 }
 
 void handshake(void) {
 	char ack[SIZE_ACK + 2];
-	while (strcmp(ack, "ACK") != 0) {
+/*	while (strcmp(ack, "ACK") != 0) {
 		Serial1.write("BEGIN\n");
 		delay(DELAY_UART);
 		if (Serial1.available()) {
@@ -30,7 +30,7 @@ void handshake(void) {
 	//to test
 	Serial.println(ack);
 	Serial1.write("ACK\n");
-	readKeypad();
+*/	readKeypad();
 }
 
 void sendData(void *p) {
@@ -51,7 +51,7 @@ void sendData(void *p) {
 			}
 			
 			Serial.print(toSend);
-			Serial1.write(toSend);
+//			Serial1.write(toSend);
 		} 
 	}
 }

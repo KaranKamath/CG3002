@@ -2,7 +2,7 @@
 #include "global.h"
 #include "ReadKeypad.h"
 #define SIZE_ACK 3
-#define NUM_STAR 3
+#define NUM_STAR 5
 #define DELAY_KEYPAD 500
 #define DEBOUNCE_TIME 100
 
@@ -25,6 +25,7 @@ void setupKeypad(void) {
 void readKeypad(void) {
 	char key;
 	byte splCount = 0;
+	byte lastStar = -1;
 	byte len = 0;
 	char keydata[40];
 	char ack [SIZE_ACK+2];
@@ -41,9 +42,15 @@ void readKeypad(void) {
 				continue;
 			} else if ((key == '#' || key == '*') && splCount != NUM_STAR) {
 				keydata[len] = '*';
-				len++;
-				splCount++;
-				Serial.println('*');
+				if (lastStar == len - 1) {
+					len = 0;
+					splCount = 0;
+				} else {
+					len++;
+					splCount++;
+					Serial.println('*');
+				}
+				lastStar = len - 1;
 			} else if ((key == '#' || key == '*') && splCount == NUM_STAR) {
 				keydata[len] = '\n';
 				len++;
