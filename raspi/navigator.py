@@ -4,6 +4,7 @@ import logging
 import sys
 import time
 from math import atan2, degrees
+from collections import deque
 
 from db import DB
 from maps_repo import MapsRepo
@@ -58,6 +59,64 @@ class Navigator(object):
         self.log.info('Got %s-%s-%s to %s-%s-%s',
                       self.o_bldg, self.o_level, self.o_node,
                       self.d_bldg, self.d_level, self.d_node)
+
+    def _generate_chunks(self):
+        if self.o_bldg != self.d_bldg or self.o_level != self.d_level:
+            self.log.info('Creating multiple navi chunks')
+            maps_to_visit = self._find_maps_to_visit()
+            self.log.info('Will visit maps: ' + str(maps_to_visit))
+            self.navi_chunks = []
+            navi_chunk = [(self.o_bldg, self.o_level, self.o_node)]
+            for i in range(len(maps_to_visit[:-1])):
+                curr_bldg, curr_lvl = maps_to_visit[i]
+                n_bldg, n_lvl = maps_to_visit[i + 1]
+                conns = self.maps.connectors(curr_bldg, curr_lvl)
+                n_conns = self.maps.connectors(n_bldg, n_lvl)
+                navi_chunk.append((curr_bldg, curr_lvl, conns[n_bldg][n_lvl]))
+                self.navi_chunks.append(navi_chunk)
+                navi_chunk = [(n_bldg, n_lvl, n_conns[curr_bldg][curr_lvl])]
+            dst_map_conns = self.maps.connectors(self.d_bldg, self.d_level)
+            last_dst = self.navi_chunks[-1][-1]
+            dst_map_start_node = dst_map_conns[last_dst[0]][last_dst[1]]
+            self.navi_chunks.append([
+                (self.d_bldg, self.d_level, dst_map_start_node),
+                (self.d_bldg, self.d_level, self.d_node)
+            ])
+            print self.navi_chunks
+        else:
+            self.log.info('Creating single navi chunk')
+            self.navi_chunks = [(
+                (self.o_bldg, self.o_level, self.o_node),
+                (self.d_bldg, self.d_level, self.d_node)
+            )]
+
+    def _find_maps_to_visit(self):
+        dist = {(self.o_bldg, self.o_level): 0}
+        parent = {}
+        to_visit = deque()
+        to_visit.append((self.o_bldg, self.o_level))
+        ended = False
+        while len(to_visit) != 0:
+            bldg, level = to_visit.popleft()
+            print bldg + ' ' + level
+            if (bldg, level) == (self.d_bldg, self.d_level):
+                break
+            connections = self.maps.connectors(bldg, level)
+            for b in connections:
+                for l in connections[b]:
+                    if (b, l) not in dist:
+                        dist[(b, l)] = dist[(bldg, level)] + 1
+                        parent[(b, l)] = (bldg, level)
+                        to_visit.append((b, l))
+        if (self.d_bldg, self.d_level) not in parent:
+            raise RuntimeError("No path from origin to destination! :O")
+
+        curr = (self.d_bldg, self.d_level)
+        maps_to_visit = [curr]
+        while curr != (self.o_bldg, self.o_level):
+            curr = parent[curr]
+            maps_to_visit.append(curr)
+        return maps_to_visit[::-1]
 
     def _get_map(self):
         self.graph = self.maps.map(self.building, self.level)
@@ -145,6 +204,8 @@ class Navigator(object):
 
     def start(self):
         self._wait_for_origin_and_destination()
+        self._generate_chunks()
+        return
         self._get_map()
         self._generate_path()
         self._acquire_next_node()

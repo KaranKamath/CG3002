@@ -8,6 +8,7 @@ class MapsRepo(object):
     MAP_URL = 'http://showmyway.comp.nus.edu.sg/getMapInfo.php?'\
               'Building={building}&Level={level}'
     SPLIT_RE = re.compile('\s*,\s*')
+    CONNECT_RE = re.compile('TO (?P<bldg>\d+)-(?P<level>\d+)-(?P<node>\d+)')
 
     def __init__(self):
         self._maps = {}
@@ -29,13 +30,22 @@ class MapsRepo(object):
         self._fetch_map(building, level)
         return self._maps[key]['north']
 
+    def connectors(self, building, level):
+        key = self._key_generator(building, level)
+        if key in self._maps:
+            return self._maps[key]['connectors']
+        self._fetch_map(building, level)
+        return self._maps[key]['connectors']
+
     def _fetch_map(self, building, level):
         key = self._key_generator(building, level)
         raw_map = self._get_raw_map(building, level)
         processed_map = self._process_raw_map(raw_map)
+        connectors = self._find_connectors(processed_map)
         self._maps[key] = {
             'map': processed_map,
-            'north': int(raw_map['info']['northAt'])
+            'north': int(raw_map['info']['northAt']) if raw_map['info'] else 0,
+            'connectors': connectors
         }
 
     def _get_raw_map(self, building, level):
@@ -53,6 +63,18 @@ class MapsRepo(object):
             }
         return graph
 
+    def _find_connectors(self, graph):
+        connectors = {}
+        for node_id, node in graph.items():
+            is_connector = self.CONNECT_RE.match(node['name'])
+            if is_connector:
+                bldg = is_connector.group('bldg')
+                level = is_connector.group('level')
+                if bldg not in connectors:
+                    connectors[bldg] = {}
+                connectors[bldg][level] = node_id
+        return connectors
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
@@ -63,4 +85,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     mr = MapsRepo()
-    print json.dumps(mr.map(args.building, args.level), indent=2)
+    print json.dumps(mr.connectors(args.building, args.level), indent=2)
