@@ -204,7 +204,7 @@ class Navigator(object):
         if self.current_prompt is None or self.current_prompt != prompt:
             self.audio.prompt(prompt, angle)
             self.audio_offset = 0
-        if prompt == PromptDirn.left or prompt == PromptDirn.right:
+        elif prompt == PromptDirn.left or prompt == PromptDirn.right:
             self.audio_offset += 1
             if self.audio_offset == self.audio_delay:
                 self.audio_offset = 0

@@ -4,7 +4,6 @@ import logging as log
 from math import sqrt
 from logging.handlers import TimedRotatingFileHandler
 from Queue import PriorityQueue
-# from pq import PriorityQueue
 
 
 class CommonLogger(object):

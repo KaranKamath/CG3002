@@ -18,16 +18,11 @@ class AudioDriver(object):
 
     def __init__(self):
         self.devnull = open(os.devnull, 'w')
-        self.proc = None
 
     def prompt(self, prompt_type, val=None):
-        if self.proc:
-            self.proc.kill()
         if val is None or prompt_type == PromptDirn.straight:
-            self.proc = Popen(
-                [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]],
-                stdout=self.devnull, stderr=self.devnull
-            )
+            call([self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]],
+                 stdout=self.devnull, stderr=self.devnull)
         else:
             args = [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]]
             for digit in str(val):
