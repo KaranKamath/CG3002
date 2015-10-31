@@ -48,7 +48,7 @@ class Navigator(object):
 
     @property
     def user_location(self):
-        ts, x, y, h, alt = self.db.fetch_location(allow_initial=False)
+        ts, x, y, h, alt, is_reset = self.db.fetch_location(allow_reset=False)
         return (x, y, h, alt)
 
     def _wait_for_origin_and_destination(self):
@@ -82,7 +82,7 @@ class Navigator(object):
                 (self.d_bldg, self.d_level, dst_map_start_node),
                 (self.d_bldg, self.d_level, self.d_node)
             ])
-            print self.navi_chunks
+            self.log.info("Generated chunks: " + str(self.navi_chunks))
         else:
             self.log.info('Creating single navi chunk')
             self.navi_chunks = [(
@@ -98,7 +98,6 @@ class Navigator(object):
         ended = False
         while len(to_visit) != 0:
             bldg, level = to_visit.popleft()
-            print bldg + ' ' + level
             if (bldg, level) == (self.d_bldg, self.d_level):
                 break
             connections = self.maps.connectors(bldg, level)
@@ -118,12 +117,21 @@ class Navigator(object):
             maps_to_visit.append(curr)
         return maps_to_visit[::-1]
 
+    def _prepare_for_next_navi_chunk(self):
+        current_chunk = self.navi_chunks[0]
+        self.building = current_chunk[0][0]
+        self.level = current_chunk[0][1]
+        self.origin = current_chunk[0][2]
+        self.destination = current_chunk[1][2]
+        self.log.info("Switching to %s-%s", self.building, self.level)
+        self.log.info("Endpoints %s-%s", self.origin, self.destination)
+
     def _get_map(self):
         self.graph = self.maps.map(self.building, self.level)
         self.north = self.maps.north_heading(self.building, self.level)
         self.db.insert_location(self.graph[self.origin]['x'],
                                 self.graph[self.origin]['y'],
-                                self.north, 0, is_initial=True)
+                                self.north, 0, is_reset=True)
 
     def _generate_path(self):
         self.log.info('Generating path...')
@@ -205,13 +213,15 @@ class Navigator(object):
     def start(self):
         self._wait_for_origin_and_destination()
         self._generate_chunks()
-        return
-        self._get_map()
-        self._generate_path()
-        self._acquire_next_node()
-        while not self.navigation_finished:
-            self._navigate_to_next_node()
-            time.sleep(0.5)
+        while len(self.navi_chunks) != 0:
+            self._prepare_for_next_navi_chunk()
+            self._get_map()
+            self._generate_path()
+            self._acquire_next_node()
+            while not self.navigation_finished:
+                self._navigate_to_next_node()
+                time.sleep(0.5)
+            self.navi_chunks.pop(0)
 
     def stop(self):
         self.navigation_finished = True

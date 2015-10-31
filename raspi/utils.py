@@ -3,9 +3,8 @@ import argparse
 import logging as log
 from math import sqrt
 from logging.handlers import TimedRotatingFileHandler
-
-from pq import PriorityQueue
-import db
+from Queue import PriorityQueue
+# from pq import PriorityQueue
 
 
 class CommonLogger(object):
@@ -50,29 +49,27 @@ def dijkstra(graph, source, target):
     for vertex in graph:
         if vertex != source:
             dist[vertex] = float("inf")
-        queue.insert(vertex, dist[vertex])
+        queue.put((dist[vertex], vertex))
 
-    while not queue.is_empty():
-        u_dist, u = queue.pop()
+    while queue.qsize() != 0:
+        u_dist, u = queue.get()
         u_node = graph[u]
 
         if u == target:
             break
 
         for v in u_node['linkTo']:
-            if queue.is_node_in_queue(v):
-                alt = dist[u] + euclidean_dist(u_node['x'], u_node['y'],
-                                               graph[v]['x'], graph[v]['y'])
-                if alt < dist[v]:
-                    dist[v] = alt
-                    prev[v] = u
-                    queue.insert(v, alt)
+            alt = dist[u] + euclidean_dist(u_node['x'], u_node['y'],
+                                           graph[v]['x'], graph[v]['y'])
+            if alt < dist[v]:
+                dist[v] = alt
+                prev[v] = u
+                queue.put((alt, v))
 
     path = []
     curr = target
     while curr in prev:
         path.append(curr)
         curr = prev[curr]
-    if path:
-        path.append(source)
+    path.append(source)
     return path[::-1]

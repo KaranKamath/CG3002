@@ -7,7 +7,6 @@ from utils import now
 class DB(object):
     data_to_insert = []
     batch_size = 2
-    initial_timestamp = 0
     block_timeout = 0.1  # 100ms as data incoming at 10Hz
     timeout_log_offset = 20
 
@@ -34,6 +33,7 @@ class DB(object):
                           y INTEGER,
                           heading INTEGER,
                           altitude INTEGER,
+                          should_reset INTEGER,
                           PRIMARY KEY (timestamp))
         """)
         self.conn.execute("""
@@ -124,20 +124,19 @@ class DB(object):
         self.conn.execute('END TRANSACTION')
         self._close_conn()
 
-    def insert_location(self, x, y, heading, altitude, is_initial=False):
+    def insert_location(self, x, y, heading, altitude, is_reset=False):
         self._open_conn()
-        timestamp = self.initial_timestamp if is_initial else now()
-        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
-        self.conn.execute(query, [timestamp, x, y, heading, altitude])
+        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?, ?)'
+        self.conn.execute(query, [now(), x, y, heading, altitude,
+                                  1 if is_reset else 0])
         self._close_conn()
 
-    def fetch_location(self, allow_initial=False):
+    def fetch_location(self, allow_reset=False):
         self._open_conn()
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         data = list(self.conn.execute(query))
         blk_counter = 0
-        while not data or (not allow_initial and
-                           data[0][0] == self.initial_timestamp):
+        while not data or (not allow_reset and data[0][5] == 1):
             time.sleep(self.block_timeout)
             blk_counter += 1
             if blk_counter >= self.timeout_log_offset:

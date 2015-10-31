@@ -9,13 +9,13 @@ class StepCounter(object):
     STEP_THRESHOLD = 5000
     TURN_THRESHOLD = 1000
 
-    def __init__(self, x, y, logger):
-        self.x = x
-        self.y = y
+    def __init__(self, logger):
         self.log = logger
         self.state = 0
         self.step_count = 0
         self.prev_val = 0
+        self.x = 0
+        self.y = 0
         self.turn_history = []
 
     def did_turn(self, gyroX):
@@ -25,6 +25,10 @@ class StepCounter(object):
 
         if len(self.turn_history) > 5:
             self.turn_history = self.turn_history[-5:]
+
+    def reset_x_and_y(self, x, y):
+        self.x = x
+        self.y = y
 
     def update_coords(self, data, heading):
         if data[-2] > self.STEP_THRESHOLD:
@@ -49,7 +53,7 @@ if __name__ == "__main__":
     from utils import now
     f = DB(logging.getLogger(__name__))
     timestamp = now()
-    j = StepCounter(0, 0)
+    j = StepCounter()
     while True:
         data = f.fetch_data(sid=0, since=timestamp)
         print "got data"

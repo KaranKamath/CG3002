@@ -26,9 +26,11 @@ class Localizer(object):
     coords_delay = 4
     coords_offset = 0
     median_window = []
+    prev_heading = None
 
-    def __init__(self, logger, init_x=0, init_y=0):
+    def __init__(self, logger):
         self.db = DB(logger)
+        self.sc = StepCounter(logger)
         self.log = logger
 
     def _get_altitude(self, data):
@@ -38,11 +40,14 @@ class Localizer(object):
         # a = [-16100, 1300, 500]
         raw_heading = None
         for data in imu_data:
-            a = data[1:4]
-            m = data[4:7]
-            f = [0, 0, -1]
-            raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-            raw_heading = self._filter_heading(raw_heading)
+            if self.prev_heading is None or data[1] > -16000:
+                a = data[1:4]
+                m = data[4:7]
+                f = [0, 0, -1]
+                raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
+                raw_heading = self._filter_heading(raw_heading)
+            else:
+                raw_heading = self.prev_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 
@@ -80,6 +85,7 @@ class Localizer(object):
         if not imu_data:
             return
         latest_imu_data = imu_data[-1]
+        print latest_imu_data[-3]
         altitude = self._get_altitude(latest_imu_data)
         heading = self._get_heading(imu_data)
         x, y = self._get_coords(imu_data, heading)
@@ -93,21 +99,17 @@ class Localizer(object):
         return [d[2] for d in data]
 
     def _initalize_location(self):
-        self.log.info('Waiting for inital x, y and map north...')
-        timestamp, x, y, heading, alt = self.db.fetch_location(True)
-        self.map_north = heading
-        self.init_x = x
-        self.init_y = y
-        self.log.info('Set initial [x, y] to [%s, %s]', x, y)
-        self.log.info('Set map north to %s', heading)
+        timestamp, x, y, heading, alt, is_reset = self.db.fetch_location(True)
+        if is_reset:
+            self.map_north = heading
+            self.sc.reset_x_and_y(x, y)
+            self.log.info('Set [x, y] to [%s, %s]', x, y)
+            self.log.info('Set map north to %s', heading)
 
     def start(self):
-        self._initalize_location()
-        # self.loc_approx = LocationApproximator(self.init_x,
-        #                                        self.init_y,
-        #                                        self.log)
-        self.sc = StepCounter(self.init_x, self.init_y, self.log)
+        self.log.info('Waiting for inital x, y and map north...')
         while True:
+            self._initalize_location()
             data = self._get_latest_imu_readings()
             self._process_imu(data)
             time.sleep(0.2)

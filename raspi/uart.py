@@ -82,6 +82,7 @@ class UartHandler(object):
             if data:
                 (packet_type, data) = self._parse_data(data)
                 self.db.insert_data(packet_type, data)
+                log_counter += 1
                 if log_counter > 50:
                     self.logger.info('Receiving data...')
                     log_counter = 0
