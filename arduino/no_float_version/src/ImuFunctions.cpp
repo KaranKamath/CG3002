@@ -10,29 +10,14 @@
 #include "global.h"
 
 xSemaphoreHandle i2c_bus = 0;
-void stub(int i, data_t* dataRead) {
-	if (i == 0) {
-		int j = 0;
-		for (j = 0; j < 9; j++) {
-			dataRead->data[j] = j;
-		}
-		} else {
-		int j = 0;
-		for (j = 0; j < 9; j++) {
-			dataRead->data[j] = 9-j;
-		}
-	}
-}
+
 void imu(void *p) {
 	data_t dataRead;
 	dataRead.id = IDIMU;
-	byte i = 0;
 	while (1) {	
 		altitude(&dataRead);
 		gyroreader(&dataRead);
 		accemagno(&dataRead); 
-//		stub(i, &dataRead);
-//		i = (i+1)%2;
 		xQueueSendToBack(report, &dataRead, 500);
 		//to test if the queue is full
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);

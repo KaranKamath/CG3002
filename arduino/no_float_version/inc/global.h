@@ -28,7 +28,7 @@
 #define OFFSETAM 1
 #define OFFSETGY 7
 
-#define RESET_PIN 2
+#define LED_PIN 38
 
 typedef struct {
 	byte id;
