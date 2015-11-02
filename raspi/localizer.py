@@ -20,6 +20,9 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 
 class Localizer(object):
 
+    THRESHOLD_TURN = 1500
+    THRESHOLD_HEADING = 20
+    INDEX_GYRO_X = -3
     imu_timestamp = now()
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
@@ -36,18 +39,31 @@ class Localizer(object):
     def _get_altitude(self, data):
         return data[0] / 1000
 
+    def _get_heading_delta(self, new_heading):
+        if self.prev_heading is None:
+            return 0
+        else:
+            return abs(new_heading - self.prev_heading)
+
+    def _should_update_heading(self, gyroX, new_heading):
+        if abs(gyroX) < THRESHOLD_TURN and self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
+            self.log.info("Interference Start / Stop")
+            return False
+
+        return True
+
     def _get_heading(self, imu_data):
         # a = [-16100, 1300, 500]
         raw_heading = None
         for data in imu_data:
-            if self.prev_heading is None or data[1] > -16000:
-                a = data[1:4]
-                m = data[4:7]
-                f = [0, 0, -1]
-                raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-                raw_heading = self._filter_heading(raw_heading)
-            else:
-                raw_heading = self.prev_heading
+            a = data[1:4]
+            m = data[4:7]
+            f = [0, 0, -1]
+            raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
+            raw_heading = self._filter_heading(raw_heading)
+            self._should_update_heading(data[INDEX_GYRO_X], raw_heading)
+            self.prev_heading = raw_heading
+
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 

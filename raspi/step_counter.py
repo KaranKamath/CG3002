@@ -7,7 +7,6 @@ STEP_LENGTH = 36
 class StepCounter(object):
 
     STEP_THRESHOLD = 5000
-    TURN_THRESHOLD = 1000
 
     def __init__(self, logger):
         self.log = logger
@@ -16,15 +15,6 @@ class StepCounter(object):
         self.prev_val = 0
         self.x = 0
         self.y = 0
-        self.turn_history = []
-
-    def did_turn(self, gyroX):
-        if abs(gyroX) > TURN_THRESHOLD:
-            self.log.info("Turn Detected")
-            self.turn_history.append((self.x, self.y))
-
-        if len(self.turn_history) > 5:
-            self.turn_history = self.turn_history[-5:]
 
     def reset_x_and_y(self, x, y):
         self.x = x
