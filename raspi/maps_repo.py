@@ -1,6 +1,8 @@
 import json
 import re
 import requests
+import pickle
+import os.path as osp
 
 
 class MapsRepo(object):
@@ -49,8 +51,16 @@ class MapsRepo(object):
         }
 
     def _get_raw_map(self, building, level):
+        cache_file = osp.dirname(osp.realpath(__file__)) + '/cache/' + building + '-' + level + '.map'
+        if osp.exists(cache_file):
+            with open(cache_file) as f:
+                map_data = pickle.load(f)
+            return map_data
         r = requests.get(self.MAP_URL.format(building=building, level=level))
-        return r.json()
+        map_data = r.json()
+        with open(cache_file, 'w') as f:
+            pickle.dump(map_data, f)
+        return map_data
 
     def _process_raw_map(self, raw_map):
         graph = {}

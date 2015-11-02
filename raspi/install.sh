@@ -1,9 +1,9 @@
 echo "Installing..."
-sudo service tweet-ip stop
-sudo rm -f /home/pi/logs/tweet_ip.log*
-sudo cp services/tweet-ip-service.sh /etc/init.d/tweet-ip
-sudo chmod +x /etc/init.d/tweet-ip
-sudo insserv tweet-ip
+# sudo service tweet-ip stop
+# sudo rm -f /home/pi/logs/tweet_ip.log*
+# sudo cp services/tweet-ip-service.sh /etc/init.d/tweet-ip
+# sudo chmod +x /etc/init.d/tweet-ip
+# sudo insserv tweet-ip
 
 sudo service uart stop
 sudo rm -f /home/pi/logs/uart.log*
@@ -26,19 +26,19 @@ sudo cp services/localizer-service.sh /etc/init.d/localizer
 sudo chmod +x /etc/init.d/localizer
 sudo insserv localizer
 
-sudo service obsdet stop
-sudo rm -f /home/pi/logs/obstacle_detector.log*
-touch /home/pi/logs/obstacle_detector.log
-sudo cp services/obsdet-service.sh /etc/init.d/obsdet
-sudo chmod +x /etc/init.d/obsdet
-sudo insserv obsdet
+# sudo service obsdet stop
+# sudo rm -f /home/pi/logs/obstacle_detector.log*
+# touch /home/pi/logs/obstacle_detector.log
+# sudo cp services/obsdet-service.sh /etc/init.d/obsdet
+# sudo chmod +x /etc/init.d/obsdet
+# sudo insserv obsdet
 
 sudo rm -f /home/pi/db/uart.db*
-sudo service tweet-ip start
+# sudo service tweet-ip start
 sudo service uart start
 sudo service navi start
 sudo service localizer start
-sudo service obsdet start
+# sudo service obsdet start
 
 cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/* /home/pi/db/*'
 cron_exists=$(sudo crontab -l | grep -F "$cron_cmd")

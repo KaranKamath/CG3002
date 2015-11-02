@@ -63,9 +63,10 @@ class UartHandler(object):
         self.logger.info('Waiting for origin and destination...')
         self.audio.prompt_enter_info()
         _input = self._serial_read_line()
-        while not _input:
+        while not _input or _input.count('*') != 5:
             _input = self._serial_read_line()
         self.ser.write('ACK')
+        self.logger.error('Got data %s', _input)
         o_bldg, o_level, o_node, d_bldg, d_level, d_node = _input.split('*')
         self.db.insert_origin_and_destination(o_bldg, o_level, o_node,
                                               d_bldg, d_level, d_node)

@@ -33,7 +33,6 @@ class DB(object):
                           y INTEGER,
                           heading INTEGER,
                           altitude INTEGER,
-                          should_reset INTEGER,
                           PRIMARY KEY (timestamp))
         """)
         self.conn.execute("""
@@ -44,6 +43,16 @@ class DB(object):
                        destination_building INTEGER,
                        destination_level INTEGER,
                        destination_node INTEGER)
+        """)
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS
+            reset_state(is_reset INTEGER)
+        """)
+        self.conn.execute("""
+            DELETE FROM reset_state
+        """)
+        self.conn.execute("""
+            INSERT INTO reset_state VALUES(0)
         """)
         self.conn.execute('PRAGMA journal_mode = WAL')
         self._close_conn()
@@ -126,17 +135,30 @@ class DB(object):
 
     def insert_location(self, x, y, heading, altitude, is_reset=False):
         self._open_conn()
-        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?, ?)'
-        self.conn.execute(query, [now(), x, y, heading, altitude,
-                                  1 if is_reset else 0])
+        query = 'INSERT INTO user_location values(?, ?, ?, ?, ?)'
+        if is_reset:
+            self.conn.execute('UPDATE reset_state SET is_reset = 1')
+        self.conn.execute(query, [now(), x, y, heading, altitude])
         self._close_conn()
 
-    def fetch_location(self, allow_reset=False):
+    def is_reset(self):
+        self._open_conn()
+        query = 'SELECT * FROM reset_state'
+        data = list(self.conn.execute(query))
+        self._close_conn()
+        return data[0][0] == 1
+
+    def clear_reset(self):
+        self._open_conn()
+        self.conn.execute('UPDATE reset_state SET is_reset = 0')
+        self._close_conn()
+
+    def fetch_location(self):
         self._open_conn()
         query = 'SELECT * FROM user_location ORDER BY timestamp DESC LIMIT 1'
         data = list(self.conn.execute(query))
         blk_counter = 0
-        while not data or (not allow_reset and data[0][5] == 1):
+        while not data:
             time.sleep(self.block_timeout)
             blk_counter += 1
             if blk_counter >= self.timeout_log_offset:
@@ -152,11 +174,10 @@ class DB(object):
         self._close_conn()
 
 if __name__ == '__main__':
-    foo = DB('uart.db')
-    foo.insert_origin_and_destination(1, 2, 23423, 24)
-    print foo.fetch_origin_and_destination()
+    import logging
+    foo = DB(logging.getLogger(__name__), 'uart.db')
     foo.insert_location(0, 0, 0, 0, True)
-    print foo.fetch_location(allow_initial=True)
+    print foo.is_reset()
     time.sleep(0.1)
-    foo.insert_location(0, 0, 0, 0, False)
-    print foo.fetch_location()
+    foo.clear_reset()
+    print foo.is_reset()

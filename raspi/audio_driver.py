@@ -25,7 +25,7 @@ class AudioDriver(object):
                  stdout=self.devnull, stderr=self.devnull)
         else:
             args = [self.PLAYER, BASE_AUDIO_DIR + self.PROMPTS[prompt_type]]
-            for digit in str(val):
+            for digit in str(int(val)):
                 args.append(BASE_AUDIO_DIR + digit + '.wav')
             call(args, stdout=self.devnull, stderr=self.devnull)
 
@@ -46,7 +46,7 @@ class AudioDriver(object):
 if __name__ == '__main__':
     from time import sleep
     obj = AudioDriver()
-    obj.prompt(PromptDirn.left)
+    obj.prompt(PromptDirn.left, 20)
     sleep(0.5)
     obj.prompt(PromptDirn.end)
     sleep(1)
