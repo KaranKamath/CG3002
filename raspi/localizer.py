@@ -51,7 +51,7 @@ class Localizer(object):
             self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
            
             self.log.info("Interference trigger: gyro:%s heading_delta: %s", 
-                abs(gyroX), _get_heading_delta(new_heading)) 
+                abs(gyroX), self._get_heading_delta(new_heading)) 
             self.log.info("Interference Start / Stop")
             return False
 
