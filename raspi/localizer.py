@@ -30,6 +30,7 @@ class Localizer(object):
     coords_offset = 0
     median_window = []
     prev_heading = None
+    heading_offset = 0
 
     def __init__(self, logger):
         self.db = DB(logger)
@@ -45,7 +46,7 @@ class Localizer(object):
         else:
             return abs(new_heading - self.prev_heading)
 
-    def _should_update_heading(self, gyroX, new_heading):
+    def _is_interference(self, gyroX, new_heading):
         if abs(gyroX) < THRESHOLD_TURN and \
             self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
            
@@ -65,7 +66,7 @@ class Localizer(object):
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
             raw_heading = self._filter_heading(raw_heading)
-            self._should_update_heading(data[INDEX_GYRO_X], raw_heading)
+            self._is_interference(data[INDEX_GYRO_X], raw_heading)
             self.prev_heading = raw_heading
 
         return convert_heading_to_horizontal_axis(raw_heading,
