@@ -4,11 +4,18 @@
 #include "Obstacle.h"
 #include "ReadKeypad.h"
 
+LPS ps;
+L3G gyro;
+LSM303 accmag;
+
 xQueueHandle report;
 
 void setup(void) {
 	Serial.begin(9600);
 	Wire.begin();
+	altitude_init();
+	accemagno_init();
+	gyro_init();
 	setupObstacle(); 
 	setupUart();
 	setupKeypad();

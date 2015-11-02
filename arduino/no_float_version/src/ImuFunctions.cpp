@@ -12,53 +12,45 @@
 xSemaphoreHandle i2c_bus = 0;
 
 void imu(void *p) {
-	data_t data_down;
-	data_t data_up;
-	data_down.id = IDDOWN;
-	data_up.id = IDUP;
-	LPS ps;
-	L3G gyro;
-	LSM303 accmag;
-	altitude_init(ps, LPS::sa0_high);
-	gyro_init(gyro, L3G::sa0_high);
-	accemagno_init(accmag, LSM303::sa0_high);
+	data_t dataRead;
+	dataRead.id = IDIMU;
 	while (1) {	
-		altitude(ps, &data_down);
-		gyroreader(gyro, &data_down);
-		accemagno(accmag, &data_down); 
-		xQueueSendToBack(report, &data_down, 500);
+		altitude(&dataRead);
+		gyroreader(&dataRead);
+		accemagno(&dataRead); 
+		xQueueSendToBack(report, &dataRead, 500);
 		//to test if the queue is full
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
 	}
 }
 
-void altitude(LPS ps, data_t *psData) {
+void altitude(data_t *psData) {
 	float alti = ps.pressureToAltitudeMeters(ps.readPressureMillibars());
 	psData->data[0] = floor(alti*1000+0.5);
 }
 
 //TODO: Add some way to tell if init fails.
-void altitude_init(LPS ps, LPS::sa0State addr) {
-	if (!ps.init(LPS::device_auto, addr)) {
+void altitude_init() {
+	if (!ps.init()) {
 		while (1);
 	}
 	ps.enableDefault();
 }
 
-void gyroreader (L3G gyro, data_t *gyroData) {
+void gyroreader (data_t *gyroData) {
 	gyro.read();
 	gyroData->data[OFFSETGY+0] = gyro.g.x;
 	gyroData->data[OFFSETGY+1] = gyro.g.y;
 	gyroData->data[OFFSETGY+2] = gyro.g.z;
 }
 
-void gyro_init(L3G gyro, L3G::sa0State addr) {
-	gyro.init(L3G::device_auto, addr);
+void gyro_init(void) {
+	gyro.init();
 	gyro.enableDefault();
 }
 
-void accemagno(LSM303 accmag, data_t *accmaData) {
+void accemagno(data_t *accmaData) {
 	accmag.read();
 	accmaData->data[OFFSETAM+0] = accmag.a.x;
 	accmaData->data[OFFSETAM+1] = accmag.a.y;
@@ -68,8 +60,7 @@ void accemagno(LSM303 accmag, data_t *accmaData) {
 	accmaData->data[OFFSETAM+5] = accmag.m.z;
 }
 
-void accemagno_init(LSM303 accmag, LSM303::sa0State addr) {
-	accmag.init(LSM303::device_auto, addr);
+void accemagno_init(void) {
+	accmag.init();
 	accmag.enableDefault();
 }
-

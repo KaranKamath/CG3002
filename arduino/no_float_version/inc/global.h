@@ -23,8 +23,7 @@
 #define DELAY_IMU 200
 #define STACK_DEPTH 190
 
-#define IDDOWN 0
-#define IDUP 1
+#define IDIMU 0
 #define IDOBSTACLE 1
 #define OFFSETAM 1
 #define OFFSETGY 7
