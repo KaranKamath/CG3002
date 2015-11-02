@@ -17,12 +17,12 @@ logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
-
+THRESHOLD_TURN = 1500
+THRESHOLD_HEADING = 20
+INDEX_GYRO_X = -3
+ 
 class Localizer(object):
 
-    THRESHOLD_TURN = 1500
-    THRESHOLD_HEADING = 20
-    INDEX_GYRO_X = -3
     imu_timestamp = now()
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
