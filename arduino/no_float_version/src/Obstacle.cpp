@@ -13,12 +13,12 @@
 //TODO: add more LED pin
 #define NUMBER_LED 5
 
-const byte ledPins[NUMBER_LED] = {40, 41, 42, 43, 44};
-
-NewPing sonar_up(TRIGGER_RIGHT, ECHO_RIGHT, MAX_DISTANCE);
-NewPing sonar_down(TRIGGER_LEFT, ECHO_LEFT, MAX_DISTANCE);
-NewPing sonar_hand(TRIGGER_HAND, ECHO_HAND, MAX_DISTANCE);
-//NewPing sonar_front(TRIGGER_FRONT, ECHO_FRONT, MAX_DISTANCE);
+const byte ledPins[NUMBER_LED] = {47, 42, 41, 47, 45};
+const byte OBSTACLE_THRESHOLD[NUMBER_LED] = {80, 80, 80, 80, 120};	
+boolean front_on;
+NewPing sonar_right(TRIGGER_RIGHT, ECHO_RIGHT, MAX_DISTANCE);
+NewPing sonar_left(TRIGGER_LEFT, ECHO_LEFT, MAX_DISTANCE);
+NewPing sonar_stick(TRIGGER_STICK, ECHO_STICK, MAX_DISTANCE);
 
 void setupObstacle()
 {	
@@ -28,11 +28,8 @@ void setupObstacle()
 	pinMode(TRIGGER_LEFT,OUTPUT);
 	pinMode(ECHO_LEFT, INPUT);
 	
-	pinMode(TRIGGER_HAND, OUTPUT);
-	pinMode(ECHO_HAND, INPUT);
-	
-//	pinMode(TRIGGER_FRONT, OUTPUT);
-//	pinMode(ECHO_FRONT, INPUT);
+	pinMode(TRIGGER_STICK, OUTPUT);
+	pinMode(ECHO_STICK, INPUT);
 	
 	for (byte i = 0; i < NUMBER_LED; i++) {
 		pinMode(ledPins[i], OUTPUT);
@@ -41,30 +38,29 @@ void setupObstacle()
 
 void ultrasound(data_t* dataRead)
 {
-	//TODO: Add another ultrasound sensor on the foot
-	unsigned long distance = 0;
-	unsigned long distance_down = 0;
-	unsigned long distance_hand = 0;
+	unsigned long distance_right = 0;
+	unsigned long distance_left = 0;
+	unsigned long distance_stick = 0;
 	
-	unsigned int usecs = 0;
-	unsigned int usecs_down = 0;
-	unsigned int usecs_hand = 0;
+	unsigned int usecs_right = 0;
+	unsigned int usecs_left = 0;
+	unsigned int usecs_stick = 0;
 	
-	usecs = sonar_up.ping_median(ITERATIONS);
-	distance = sonar_up.convert_cm(usecs);
+	usecs_right = sonar_right.ping_median(ITERATIONS);
+	distance_right = sonar_right.convert_cm(usecs_right);
 
-	usecs_down = sonar_down.ping_median(ITERATIONS);
-	distance_down = sonar_down.convert_cm(usecs_down);
+	usecs_left = sonar_left.ping_median(ITERATIONS);
+	distance_left = sonar_left.convert_cm(usecs_left);
 	
-	usecs_hand = sonar_hand.ping_median(ITERATIONS);
-	distance_hand = sonar_hand.convert_cm(usecs_hand);
+	usecs_stick = sonar_stick.ping_median(ITERATIONS);
+	distance_stick = sonar_stick.convert_cm(usecs_stick);
 	
-	driveActuators(1, distance);
-	dataRead->data[1] = distance;
-	driveActuators(2, distance_down);
-	dataRead->data[2] = distance_down;
-	driveActuators(3, distance_hand);
-	dataRead->data[3] = distance_hand;
+	driveActuators(1, distance_right);
+	dataRead->data[1] = distance_right;
+	driveActuators(2, distance_left);
+	dataRead->data[2] = distance_left;
+	driveActuators(3, distance_stick);
+	dataRead->data[3] = distance_stick;
 }
 
 void infrared(data_t* dataRead)
@@ -73,31 +69,19 @@ void infrared(data_t* dataRead)
 	float sensorValue, infraDist;
 	sensorValue = analogRead(IR_STICK);
 	infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
-	
-	//Test
 	driveActuators(0, infraDist);
-	//Test end
-	
 	dataRead->data[0] = infraDist;
 	
 	sensorValue = analogRead(IR_FRONT);
 	infraDist = 10650.08 * pow(sensorValue,-0.935) - 10;
 	driveActuators(4, infraDist);
 	dataRead->data[4] = infraDist;
-	
 }
 
-void stub_ob(int i, data_t* dataRead) {
-	int j = 1;
-	for (j = 1; j < 4; j++) {
-		dataRead->data[j] = 0;
-	}
-}
 void readDistanceSensors(void *p)
 {
 	data_t dataRead;
 	dataRead.id = IDOBSTACLE;
-	byte i = 0;
 	while (1) {
 		ultrasound(&dataRead);
 		infrared(&dataRead);
@@ -108,13 +92,18 @@ void readDistanceSensors(void *p)
 	}		
 }
 
-//Testing purpose
 void driveActuators(byte id, float dist)
 {
 	if (id >= NUMBER_LED) {
 		return;
 	}
-	bool on = (dist > 0 && dist < OBSTACLE_THRESHOLD);
+	bool on = (dist > 0 && dist < OBSTACLE_THRESHOLD[id]);
+	if (id == 3) {
+		front_on = on;
+	}
+	if (id == 0) {
+		on |= front_on;
+	}
 	if (on) {
 		digitalWrite(ledPins[id], HIGH);
 	} else {

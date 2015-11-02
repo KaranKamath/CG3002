@@ -18,8 +18,10 @@ byte rowPins[ROWS] = {22, 24, 26, 28};
 byte colPins[COLS] = {31, 32, 34};
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS ); 
+
 void setupKeypad(void) {
 	keypad.setDebounceTime(DEBOUNCE_TIME);
+	readKeypad();
 }
 
 void readKeypad(void) {
@@ -62,7 +64,6 @@ void readKeypad(void) {
 		}	
 	}
 	
-	//strcpy(keydata, "1*2*1*10\n");
 	Serial.println(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
@@ -73,5 +74,6 @@ void readKeypad(void) {
 			ack[SIZE_ACK] = '\0';
 		}
 	}
+	Serial.println(ack);
 }
 

@@ -17,10 +17,10 @@ void setup(void) {
 	accemagno_init();
 	gyro_init();
 	setupObstacle(); 
-	setupKeypad();
 	setupUart();
+	setupKeypad();
+	
 	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
-	//TODO: test if the queue is created correctly
 }
 
 int main(void)
@@ -32,9 +32,13 @@ int main(void)
     TaskHandle_t alt, send, ui;
 	
 	xTaskCreate(readDistanceSensors, "UI", 300, NULL, 3, &ui);
-//	xTaskCreate(imu, "S", 256, NULL, 2, &alt);
+	xTaskCreate(imu, "S", 256, NULL, 2, &alt);
 	xTaskCreate(sendData, "R", 300, NULL, 2, &send);
 	
+	if (ui == NULL || alt == NULL || send == NULL) {
+		pinMode(LED_PIN, OUTPUT);
+		digitalWrite(LED_PIN, HIGH);
+	}
 	//TODO: test if tasks are created correctly
 	vTaskStartScheduler();
 }
