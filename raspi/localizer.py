@@ -46,7 +46,11 @@ class Localizer(object):
             return abs(new_heading - self.prev_heading)
 
     def _should_update_heading(self, gyroX, new_heading):
-        if abs(gyroX) < THRESHOLD_TURN and self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
+        if abs(gyroX) < THRESHOLD_TURN and \
+            self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
+           
+            self.log.info("Interference trigger: gyro:%s heading_delta: %s", 
+                abs(gyroX), _get_heading_delta(new_heading)) 
             self.log.info("Interference Start / Stop")
             return False
 
