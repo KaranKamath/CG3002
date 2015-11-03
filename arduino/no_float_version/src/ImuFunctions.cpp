@@ -42,6 +42,7 @@ void imu(void *p) {
 		
 		xQueueSendToBack(report, &data_down, 500);
 		xQueueSendToBack(report, &data_up, 500);
+
 		//to test if the queue is full
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
@@ -60,7 +61,6 @@ LPS altitude_init(LPS::sa0State addr) {
 		while (1);
 	}
 	ps.enableDefault();
-//	Serial.println("altitude");
 	return ps;
 }
 
@@ -75,7 +75,6 @@ L3G gyro_init(L3G::sa0State addr) {
 	L3G gyro;
 	gyro.init(L3G::device_auto, addr);
 	gyro.enableDefault();
-//	Serial.println("gyro");
 	return gyro;
 }
 

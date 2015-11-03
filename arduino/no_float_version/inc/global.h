@@ -24,8 +24,9 @@
 #define STACK_DEPTH 190
 
 #define IDDOWN 0
-#define IDUP 1
-#define IDOBSTACLE 2
+#define IDUP 2
+#define IDOBSTACLE 1
+
 #define OFFSETAM 1
 #define OFFSETGY 7
 

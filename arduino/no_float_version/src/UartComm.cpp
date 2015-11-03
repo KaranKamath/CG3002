@@ -14,7 +14,7 @@
 
 void setupUart() {
 	Serial1.begin(BAUD_RATE);
-//	handshake();
+	handshake();
 }
 
 void handshake(void) {
@@ -49,7 +49,7 @@ void sendData(void *p) {
 			}
 			
 			Serial.print(toSend);
-//			Serial1.write(toSend);
+			Serial1.write(toSend);
 		} 
 	}
 }
