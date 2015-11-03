@@ -21,7 +21,7 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 void setupKeypad(void) {
 	keypad.setDebounceTime(DEBOUNCE_TIME);
-	readKeypad();
+//	readKeypad();
 }
 
 void readKeypad(void) {

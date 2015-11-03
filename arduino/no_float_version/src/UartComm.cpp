@@ -8,22 +8,22 @@
 #include "UartComm.h"
 #include "ReadKeypad.h"
 
-#define DELAY_UART 100
+#define DELAY_UART 50
 #define BAUD_RATE 9600
 #define SIZE_ACK 3
 
 void setupUart() {
 	Serial1.begin(BAUD_RATE);
-	handshake();
+//	handshake();
 }
 
 void handshake(void) {
 	char ack[SIZE_ACK + 2];
 	while (strcmp(ack, "ACK") != 0) {
-		Serial1.write("BEGIN\n");
+		Serial.write("BEGIN\n");
 		delay(DELAY_UART);
-		if (Serial1.available()) {
-			Serial1.readBytesUntil(0, ack, SIZE_ACK);
+		if (Serial.available()) {
+			Serial.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';
 		}
 	}
@@ -37,8 +37,8 @@ void sendData(void *p) {
 	char toSend[100];
 	while (1) {
 		if (xQueueReceive(report, &received, portMAX_DELAY)) {
-			if (received.id == IDIMU) {
-				snprintf(toSend, sizeof(toSend), "%d|%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", IDIMU, 
+			if (received.id == IDDOWN || received.id == IDUP) {
+				snprintf(toSend, sizeof(toSend), "%d|%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", received.id, 
 				received.data[0], 		
 				received.data[0+OFFSETAM], received.data[1+OFFSETAM], received.data[2+OFFSETAM],
 				received.data[3+OFFSETAM], received.data[4+OFFSETAM], received.data[5+OFFSETAM],
@@ -49,7 +49,7 @@ void sendData(void *p) {
 			}
 			
 			Serial.print(toSend);
-			Serial1.write(toSend);
+//			Serial1.write(toSend);
 		} 
 	}
 }
