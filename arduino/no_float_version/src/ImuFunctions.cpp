@@ -9,24 +9,39 @@
 #include "debugging.h"
 #include "global.h"
 
-xSemaphoreHandle i2c_bus = 0;
-
 void imu(void *p) {
 	data_t data_down;
 	data_t data_up;
 	data_down.id = IDDOWN;
 	data_up.id = IDUP;
-	LPS ps;
-	L3G gyro;
-	LSM303 accmag;
-	altitude_init(ps, LPS::sa0_high);
-	gyro_init(gyro, L3G::sa0_high);
-	accemagno_init(accmag, LSM303::sa0_high);
+	
+	L3G gyro_down;
+	LPS ps_down;
+	LSM303 accma_down;
+	
+	L3G gyro_up;
+	LPS ps_up;
+	LSM303 accma_up;
+	
+	gyro_down = gyro_init(L3G::sa0_high);
+	ps_down = altitude_init(LPS::sa0_high);
+	accma_down = accemagno_init(LSM303::sa0_high);
+	
+	gyro_up = gyro_init(L3G::sa0_low);
+	ps_up = altitude_init(LPS::sa0_low);
+	accma_up = accemagno_init(LSM303::sa0_low);
+	
 	while (1) {	
-		altitude(ps, &data_down);
-		gyroreader(gyro, &data_down);
-		accemagno(accmag, &data_down); 
+		altitude(ps_down, &data_down);
+		gyroreader(gyro_down, &data_down);
+		accemagno(accma_down, &data_down); 
+		
+		altitude(ps_up, &data_up);
+		gyroreader(gyro_up, &data_up);
+		accemagno(accma_up, &data_up);
+		
 		xQueueSendToBack(report, &data_down, 500);
+		xQueueSendToBack(report, &data_up, 500);
 		//to test if the queue is full
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
@@ -39,11 +54,13 @@ void altitude(LPS ps, data_t *psData) {
 }
 
 //TODO: Add some way to tell if init fails.
-void altitude_init(LPS ps, LPS::sa0State addr) {
+LPS altitude_init(LPS::sa0State addr) {
+	LPS ps;
 	if (!ps.init(LPS::device_auto, addr)) {
 		while (1);
 	}
 	ps.enableDefault();
+	return ps;
 }
 
 void gyroreader (L3G gyro, data_t *gyroData) {
@@ -53,9 +70,11 @@ void gyroreader (L3G gyro, data_t *gyroData) {
 	gyroData->data[OFFSETGY+2] = gyro.g.z;
 }
 
-void gyro_init(L3G gyro, L3G::sa0State addr) {
+L3G gyro_init(L3G::sa0State addr) {
+	L3G gyro;
 	gyro.init(L3G::device_auto, addr);
 	gyro.enableDefault();
+	return gyro;
 }
 
 void accemagno(LSM303 accmag, data_t *accmaData) {
@@ -68,8 +87,10 @@ void accemagno(LSM303 accmag, data_t *accmaData) {
 	accmaData->data[OFFSETAM+5] = accmag.m.z;
 }
 
-void accemagno_init(LSM303 accmag, LSM303::sa0State addr) {
-	accmag.init(LSM303::device_auto, addr);
+LSM303 accemagno_init(LSM303::sa0State addr) {
+	LSM303 accmag;
+	accmag.init(LSM303::device_D, addr);
 	accmag.enableDefault();
+	return accmag;
 }
 

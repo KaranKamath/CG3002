@@ -12,8 +12,6 @@
 #include "global.h"
 #include "NewPing.h"
 
-#define NUM_SONAR 2
-
 #define TRIGGER_LEFT 12
 #define ECHO_LEFT 11
 #define TRIGGER_RIGHT 8
@@ -30,7 +28,7 @@
 #define DELAY_DISTANCE 200
 
 void setupObstacle(void);
-void ultrasound(data_t* dataRead);
+void ultrasound(NewPing sonar_right, NewPing sonar_left, NewPing sonar_stick, data_t* dataRead);
 void infrared(data_t* dataRead);
 void readDistanceSensors(void *p);
 

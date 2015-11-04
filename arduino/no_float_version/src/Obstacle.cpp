@@ -8,17 +8,14 @@
 #include "global.h"
 #include "Obstacle.h"
 #include "UartComm.h"
-#include "debugging.h"
 
 //TODO: add more LED pin
 #define NUMBER_LED 5
 
 const byte ledPins[NUMBER_LED] = {47, 42, 41, 47, 45};
 const byte OBSTACLE_THRESHOLD[NUMBER_LED] = {80, 80, 80, 80, 120};	
+	
 boolean front_on;
-NewPing sonar_right(TRIGGER_RIGHT, ECHO_RIGHT, MAX_DISTANCE);
-NewPing sonar_left(TRIGGER_LEFT, ECHO_LEFT, MAX_DISTANCE);
-NewPing sonar_stick(TRIGGER_STICK, ECHO_STICK, MAX_DISTANCE);
 
 void setupObstacle()
 {	
@@ -36,7 +33,7 @@ void setupObstacle()
 	}
 }
 
-void ultrasound(data_t* dataRead)
+void ultrasound(NewPing sonar_right, NewPing sonar_left, NewPing sonar_stick, data_t* dataRead)
 {
 	unsigned long distance_right = 0;
 	unsigned long distance_left = 0;
@@ -82,8 +79,13 @@ void readDistanceSensors(void *p)
 {
 	data_t dataRead;
 	dataRead.id = IDOBSTACLE;
+	
+	NewPing sonar_right(TRIGGER_RIGHT, ECHO_RIGHT, MAX_DISTANCE);
+	NewPing sonar_left(TRIGGER_LEFT, ECHO_LEFT, MAX_DISTANCE);
+	NewPing sonar_stick(TRIGGER_STICK, ECHO_STICK, MAX_DISTANCE);
+	
 	while (1) {
-		ultrasound(&dataRead);
+		ultrasound(sonar_right, sonar_left, sonar_stick, &dataRead);
 		infrared(&dataRead);
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		xQueueSendToBack(report, &dataRead, 500);

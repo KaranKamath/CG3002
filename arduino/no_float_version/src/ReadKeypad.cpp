@@ -1,30 +1,31 @@
-
 #include "global.h"
 #include "ReadKeypad.h"
+
 #define SIZE_ACK 3
 #define NUM_STAR 5
 #define DELAY_KEYPAD 500
 #define DEBOUNCE_TIME 100
 
-const byte ROWS = 4; 
-const byte COLS = 3; 
-char keys[ROWS][COLS] = {
-	{'1','2','3'},
-	{'4','5','6'},
-	{'7','8','9'},
-	{'*','0','#'}
-};
-byte rowPins[ROWS] = {22, 24, 26, 28}; 
-byte colPins[COLS] = {31, 32, 34};
 
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS ); 
 
 void setupKeypad(void) {
+	const byte ROWS = 4; 
+	const byte COLS = 3; 
+	char keys[ROWS][COLS] = {
+		{'1','2','3'},
+		{'4','5','6'},
+		{'7','8','9'},
+		{'*','0','#'}
+	};
+	byte rowPins[ROWS] = {22, 24, 26, 28};
+	byte colPins[COLS] = {31, 32, 34};
+
+	Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 	keypad.setDebounceTime(DEBOUNCE_TIME);
-	readKeypad();
+	readKeypad(keypad);
 }
 
-void readKeypad(void) {
+void readKeypad(Keypad keypad) {
 	char key;
 	byte splCount = 0;
 	byte lastStar = -1;
@@ -67,10 +68,10 @@ void readKeypad(void) {
 	Serial.println(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
-		Serial1.write(keydata);
+		Serial.write(keydata);
 		delay(DELAY_KEYPAD);
-		if (Serial1.available()) {
-			Serial1.readBytesUntil(0, ack, SIZE_ACK);
+		if (Serial.available()) {
+			Serial.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';
 		}
 	}

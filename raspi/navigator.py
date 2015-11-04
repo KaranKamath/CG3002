@@ -48,7 +48,9 @@ class Navigator(object):
 
     @property
     def user_location(self):
-        ts, x, y, h, alt, is_reset = self.db.fetch_location(allow_reset=False)
+        while self.db.is_reset():
+            time.sleep(0.1)
+        ts, x, y, h, alt = self.db.fetch_location()
         return (x, y, h, alt)
 
     def _wait_for_origin_and_destination(self):
@@ -123,6 +125,7 @@ class Navigator(object):
         self.level = current_chunk[0][1]
         self.origin = current_chunk[0][2]
         self.destination = current_chunk[1][2]
+        self.navigation_finished = False
         self.log.info("Switching to %s-%s", self.building, self.level)
         self.log.info("Endpoints %s-%s", self.origin, self.destination)
 
@@ -132,6 +135,7 @@ class Navigator(object):
         self.db.insert_location(self.graph[self.origin]['x'],
                                 self.graph[self.origin]['y'],
                                 self.north, 0, is_reset=True)
+        self.log.info(self.db.is_reset())
 
     def _generate_path(self):
         self.log.info('Generating path...')

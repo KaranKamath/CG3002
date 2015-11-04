@@ -9,7 +9,6 @@
 
 #include "Keypad.h"
 void setupKeypad(void);
-void readKeypad(void);
-
+void readKeypad(Keypad keypad);
 
 #endif /* READKEYPAD_H_ */

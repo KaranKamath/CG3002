@@ -17,12 +17,13 @@ logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
+THRESHOLD_TURN = 1500
+THRESHOLD_HEADING = 20
+INDEX_GYRO_X = -3
+
 
 class Localizer(object):
 
-    THRESHOLD_TURN = 1500
-    THRESHOLD_HEADING = 20
-    INDEX_GYRO_X = -3
     imu_timestamp = now()
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
@@ -38,7 +39,7 @@ class Localizer(object):
         self.log = logger
 
     def _get_altitude(self, data):
-        return data[0] / 1000
+        return data[0] / 1000.0
 
     def _get_heading_delta(self, new_heading):
         if self.prev_heading is None:
@@ -48,10 +49,10 @@ class Localizer(object):
 
     def _is_interference(self, gyroX, new_heading):
         if abs(gyroX) < THRESHOLD_TURN and \
-            self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
-           
-            self.log.info("Interference trigger: gyro:%s heading_delta: %s", 
-                abs(gyroX), _get_heading_delta(new_heading)) 
+                self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
+
+            self.log.info("Interference trigger: gyro:%s heading_delta: %s",
+                          abs(gyroX), self._get_heading_delta(new_heading))
             self.log.info("Interference Start / Stop")
             return False
 
@@ -94,19 +95,11 @@ class Localizer(object):
         for d in data:
             x, y = self.sc.update_coords(d, heading)
         return x, y
-        # self.loc_approx.append_to_buffers(data, heading)
-        # if self.coords_offset == self.coords_delay:
-        #     self.coords_offset = 0
-        #     return self.loc_approx.get_new_position()
-        # else:
-        #     self.coords_offset += 1
-        #     return self.loc_approx.get_position()
 
     def _process_imu(self, imu_data):
         if not imu_data:
             return
         latest_imu_data = imu_data[-1]
-        print latest_imu_data[-3]
         altitude = self._get_altitude(latest_imu_data)
         heading = self._get_heading(imu_data)
         x, y = self._get_coords(imu_data, heading)
@@ -120,17 +113,20 @@ class Localizer(object):
         return [d[2] for d in data]
 
     def _initalize_location(self):
-        timestamp, x, y, heading, alt, is_reset = self.db.fetch_location(True)
-        if is_reset:
-            self.map_north = heading
-            self.sc.reset_x_and_y(x, y)
-            self.log.info('Set [x, y] to [%s, %s]', x, y)
-            self.log.info('Set map north to %s', heading)
+        timestamp, x, y, heading, alt = self.db.fetch_location()
+        self.map_north = heading
+        self.sc.reset_x_and_y(x, y)
+        self.db.clear_reset()
+        self.log.info('Set [x, y] to [%s, %s]', x, y)
+        self.log.info('Set map north to %s', heading)
 
     def start(self):
         self.log.info('Waiting for inital x, y and map north...')
+        self._initalize_location()
         while True:
-            self._initalize_location()
+            if self.db.is_reset():
+                self.log.info("got reset")
+                self._initalize_location()
             data = self._get_latest_imu_readings()
             self._process_imu(data)
             time.sleep(0.2)

@@ -10,7 +10,7 @@
 #define UARTCOMM_H_
 
 #include "global.h"
-#include "debugging.h"
+
 extern xQueueHandle report;
 void setupUart();
 void handshake(void);

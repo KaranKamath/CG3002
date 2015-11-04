@@ -18,11 +18,12 @@
 extern xQueueHandle report;
 
 void imu(void *p);	
+
 void altitude(LPS ps, data_t *psData);
-void altitude_init(LPS ps, LPS::sa0State addr);
+LPS altitude_init(LPS::sa0State addr);
 void gyroreader(L3G gyro, data_t *gyroData);
-void gyro_init(L3G gyro, L3G::sa0State addr);
+L3G gyro_init(L3G::sa0State addr);
 void accemagno(LSM303 accmag, data_t *accmaData);
-void accemagno_init(LSM303 accmag, LSM303::sa0State addr);
+LSM303 accemagno_init(LSM303::sa0State addr);
 
 #endif /* IMUFUNCTIONS_H_ */
