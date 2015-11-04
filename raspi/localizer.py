@@ -20,7 +20,8 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 THRESHOLD_TURN = 1500
 THRESHOLD_HEADING = 20
 INDEX_GYRO_X = -3
- 
+
+
 class Localizer(object):
 
     imu_timestamp = now()
@@ -48,10 +49,10 @@ class Localizer(object):
 
     def _is_interference(self, gyroX, new_heading):
         if abs(gyroX) < THRESHOLD_TURN and \
-            self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
-           
-            self.log.info("Interference trigger: gyro:%s heading_delta: %s", 
-                abs(gyroX), self._get_heading_delta(new_heading)) 
+                self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
+
+            self.log.info("Interference trigger: gyro:%s heading_delta: %s",
+                          abs(gyroX), self._get_heading_delta(new_heading))
             self.log.info("Interference Start / Stop")
             return False
 
