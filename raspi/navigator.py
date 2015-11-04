@@ -24,7 +24,7 @@ class Navigator(object):
 
     ANGLE_THRESHOLD = 20
     RELAXED_ANGLE_THRESHOLD = 10
-    DISTANCE_THRESHOLD = 150
+    DISTANCE_THRESHOLD = 75
     location_tstmp = 0
     audio_delay = 6  # 0.5s * 6 = 3s
     audio_offset = 0

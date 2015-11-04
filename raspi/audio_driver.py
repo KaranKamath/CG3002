@@ -29,13 +29,27 @@ SPEED_ARGS = ['-r', '1.3'] if _platform == 'darwin' else ['tempo', '1.3']
 
 class AudioDriver(object):
 
-    def _play(self, args):
+    def __init__(self):
+        self.process = None
+
+    def _play(self, args, async=True):
+        if self.process:
+            self.process.kill()
         with open(os.devnull, 'w') as null:
             if _platform == 'darwin':
                 for arg in args[1:]:
-                    call([args[0], arg] + SPEED_ARGS, stdout=null, stderr=null)
+                    if async:
+                        self.process = Popen([args[0], arg] + SPEED_ARGS,
+                                             stdout=null, stderr=null)
+                    else:
+                        call([args[0], arg] + SPEED_ARGS,
+                             stdout=null, stderr=null)
+            elif async:
+                self.process = Popen(args + SPEED_ARGS,
+                                     stdout=null, stderr=null)
             else:
-                call(args + SPEED_ARGS, stdout=null, stderr=null)
+                call(args + SPEED_ARGS,
+                     stdout=null, stderr=null)
 
     def prompt(self, prompt_type, val=None):
         if val is None:
@@ -52,16 +66,16 @@ class AudioDriver(object):
         args = [PLAYER, NODE_REACHED]
         for digit in str(int(node_id)):
             args.append(DIGITS[int(digit)])
-        self._play(args)
+        self._play(args, async=False)
 
     def prompt_stairs(self):
-        self._play([PLAYER, STAIRS])
+        self._play([PLAYER, STAIRS], async=False)
 
     def prompt_enter_info(self):
-        self._play([PLAYER, ENTER_INFO])
+        self._play([PLAYER, ENTER_INFO], async=False)
 
     def prompt_begin(self):
-        self._play([PLAYER, BEGIN])
+        self._play([PLAYER, BEGIN], async=False)
 
 if __name__ == '__main__':
     from time import sleep
