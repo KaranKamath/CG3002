@@ -1,18 +1,21 @@
 from math import sin, cos, radians
 import logging
+from enum import Enum
 
 STEP_LENGTH = 36
+STEP_THRESHOLD = 5000
+
+
+class StepCounterState(Enum):
+    peak = 0
+    non_peak = 1
 
 
 class StepCounter(object):
 
-    STEP_THRESHOLD = 5000
-
     def __init__(self, logger):
         self.log = logger
-        self.state = 0
-        self.step_count = 0
-        self.prev_val = 0
+        self.state = StepCounterState.non_peak
         self.x = 0
         self.y = 0
 
@@ -21,16 +24,14 @@ class StepCounter(object):
         self.y = y
 
     def update_coords(self, data, heading):
-        if data[-2] > self.STEP_THRESHOLD:
-            if self.state != 1:
-                self.state = 1
+        gyro_y = data[-2]
+        if gyro_y > STEP_THRESHOLD:
+            if self.state != StepCounterState.peak:
+                self.state = StepCounterState.peak
                 self.log.info("Step detected")
                 self._update_x_and_y(heading)
-                return (self.x, self.y)
-
         else:
-            if self.state != -1:
-                self.state = -1
+            self.state = StepCounterState.non_peak
         return (self.x, self.y)
 
     def _update_x_and_y(self, heading):
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     from utils import now
     f = DB(logging.getLogger(__name__))
     timestamp = now()
-    j = StepCounter()
+    j = StepCounter(logging.getLogger(__name__))
     while True:
         data = f.fetch_data(sid=0, since=timestamp)
         print "got data"

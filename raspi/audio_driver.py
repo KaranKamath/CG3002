@@ -18,30 +18,34 @@ PROMPTS = {
 }
 DIGITS = [get_audio_path(str(n) + '.wav') for n in range(10)]
 DEGREES = get_audio_path('degrees.wav')
+CENTIMETERS = get_audio_path('centimeters.wav')
 NODE_REACHED = get_audio_path('node_reached.wav')
+STAIRS = get_audio_path('stairs.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
 BEGIN = get_audio_path('begin.wav')
-PLAYER = 'afplay' if _platform == 'darwin' else 'aplay'
+PLAYER = 'afplay' if _platform == 'darwin' else 'play'
+SPEED_ARGS = ['-r', '1.3'] if _platform == 'darwin' else ['tempo', '1.3']
 
 
 class AudioDriver(object):
 
     def _play(self, args):
         with open(os.devnull, 'w') as null:
-            if len(args) > 2 and PLAYER == 'afplay':
+            if _platform == 'darwin':
                 for arg in args[1:]:
-                    call([args[0], arg], stdout=null, stderr=null)
+                    call([args[0], arg] + SPEED_ARGS, stdout=null, stderr=null)
             else:
-                call(args, stdout=null, stderr=null)
+                call(args + SPEED_ARGS, stdout=null, stderr=null)
 
     def prompt(self, prompt_type, val=None):
-        if val is None or prompt_type == PromptDirn.straight:
+        if val is None:
             self._play([PLAYER, PROMPTS[prompt_type]])
         else:
             args = [PLAYER, PROMPTS[prompt_type]]
             for digit in str(int(val)):
                 args.append(DIGITS[int(digit)])
-            args.append(DEGREES)
+            args.append(CENTIMETERS if prompt_type == PromptDirn.straight
+                        else DEGREES)
             self._play(args)
 
     def prompt_node_reached(self, node_id):
@@ -49,6 +53,9 @@ class AudioDriver(object):
         for digit in str(int(node_id)):
             args.append(DIGITS[int(digit)])
         self._play(args)
+
+    def prompt_stairs(self):
+        self._play([PLAYER, STAIRS])
 
     def prompt_enter_info(self):
         self._play([PLAYER, ENTER_INFO])
@@ -61,5 +68,5 @@ if __name__ == '__main__':
     obj = AudioDriver()
     obj.prompt(PromptDirn.left, 1.234)
     obj.prompt(PromptDirn.end)
-    obj.prompt(PromptDirn.right, 12)
+    obj.prompt(PromptDirn.straight, 12)
     obj.prompt_node_reached(1)

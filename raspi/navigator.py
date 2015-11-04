@@ -163,24 +163,28 @@ class Navigator(object):
 
         self.log.info('Next node %s @[%scm, %sdeg]', self.next_node_id,
                       dist, angle)
-        if self._node_reached(dist, angle):
-            self.audio.prompt_node_reached(self.next_node_id)
-            self.log.info('Reached node %s', self.next_node_id)
-            self.next_node_idx += 1
-            if self.next_node_idx == len(self.path):
-                self.log.info('Reached destination node')
-                self.stop()
-            else:
-                self.log.info('Navigating to node %s', self.next_node_id)
-                self._navigate_to_next_node()
+        if self._is_within_node(dist, angle):
+            self._node_reached()
         else:
             new_prompt = self._generate_prompt(angle)
-            self._play_prompt(new_prompt, angle)
+            self._play_prompt(new_prompt, angle, dist)
             self.current_prompt = new_prompt
 
-    def _node_reached(self, dist, angle):
-        node_reached = (dist < self.DISTANCE_THRESHOLD)
-        return node_reached
+    def _is_within_node(self, dist, angle):
+        return dist < self.DISTANCE_THRESHOLD
+
+    def _node_reached(self):
+        self.audio.prompt_node_reached(self.next_node_id)
+        self.log.info('Reached node %s', self.next_node_id)
+        if self.next_node['name'] == 'Stairwell':
+            self.audio.prompt_stairs()
+        self.next_node_idx += 1
+        if self.next_node_idx == len(self.path):
+            self.log.info('Reached destination node')
+            self.stop()
+        else:
+            self.log.info('Navigating to node %s', self.next_node_id)
+            self._navigate_to_next_node()
 
     def _calc_directions(self, x, y, node_x, node_y, heading):
         distance = int(round(euclidean_dist(node_x, node_y, x, y)))
@@ -204,15 +208,16 @@ class Navigator(object):
             new_prompt = PromptDirn.right
         return new_prompt
 
-    def _play_prompt(self, prompt, angle):
+    def _play_prompt(self, prompt, angle, dist):
+        val = dist if prompt == PromptDirn.straight else angle
         if self.current_prompt is None or self.current_prompt != prompt:
-            self.audio.prompt(prompt, angle)
+            self.audio.prompt(prompt, val)
             self.audio_offset = 0
         elif prompt == PromptDirn.left or prompt == PromptDirn.right:
             self.audio_offset += 1
-            if self.audio_offset == self.audio_delay:
-                self.audio_offset = 0
-                self.audio.prompt(prompt, angle)
+        if self.audio_offset == self.audio_delay:
+            self.audio_offset = 0
+            self.audio.prompt(prompt, val)
 
     def start(self):
         self._wait_for_origin_and_destination()
