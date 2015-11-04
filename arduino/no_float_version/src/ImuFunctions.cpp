@@ -42,7 +42,6 @@ void imu(void *p) {
 		
 		xQueueSendToBack(report, &data_down, 500);
 		xQueueSendToBack(report, &data_up, 500);
-
 		//to test if the queue is full
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
@@ -90,7 +89,7 @@ void accemagno(LSM303 accmag, data_t *accmaData) {
 
 LSM303 accemagno_init(LSM303::sa0State addr) {
 	LSM303 accmag;
-	accmag.init(LSM303::device_auto, addr);
+	accmag.init(LSM303::device_D, addr);
 	accmag.enableDefault();
 	return accmag;
 }

@@ -13,7 +13,7 @@
 #define SIZE_ACK 3
 
 void setupUart() {
-	Serial1.begin(BAUD_RATE);
+//	Serial1.begin(BAUD_RATE);
 	handshake();
 }
 
@@ -29,7 +29,7 @@ void handshake(void) {
 	}
 
 	Serial.println(ack);
-	Serial1.write("ACK\n");
+//	Serial1.write("ACK\n");
 }
 
 void sendData(void *p) {
@@ -49,7 +49,7 @@ void sendData(void *p) {
 			}
 			
 			Serial.print(toSend);
-			Serial1.write(toSend);
+//			Serial1.write(toSend);
 		} 
 	}
 }
