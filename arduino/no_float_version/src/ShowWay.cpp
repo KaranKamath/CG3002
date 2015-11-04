@@ -4,16 +4,16 @@
 #include "Obstacle.h"
 #include "ReadKeypad.h"
 
-xQueueHandle report;
+//xQueueHandle report;
 
 void setup(void) {
 	Serial.begin(9600);
 	Wire.begin();
 	setupObstacle(); 
-//	setupUart();
-//	setupKeypad();
+	setupUart();
+	setupKeypad();
 	
-	report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
+	//report = xQueueCreate(QUEUE_SIZE, sizeof(data_t)); 
 }
 
 int main(void)
@@ -22,13 +22,13 @@ int main(void)
 	init();
 	setup();
 	
-    TaskHandle_t alt, send, ui;
+    TaskHandle_t alt, ui;
 	
 	xTaskCreate(readDistanceSensors, "UI", 350, NULL, 3, &ui);
-	xTaskCreate(imu, "S", 370, NULL, 2, &alt);
-	xTaskCreate(sendData, "R", 300, NULL, 2, &send);
+	xTaskCreate(imu, "S", 500, NULL, 2, &alt);
+	//xTaskCreate(sendData, "R", 300, NULL, 2, &send);
 	
-	if (ui == NULL || alt == NULL || send == NULL) {
+	if (ui == NULL || alt == NULL ) {
 		pinMode(LED_PIN, OUTPUT);
 		digitalWrite(LED_PIN, HIGH);
 		Serial.println("One or more tasks not created");

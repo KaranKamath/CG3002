@@ -15,10 +15,10 @@
 #include "L3G.h"
 #include "LSM303.h"
 
-extern xQueueHandle report;
+//extern xQueueHandle report;
 
 void imu(void *p);	
-
+void createString(char *toSend, data_t *psData);
 void altitude(LPS ps, data_t *psData);
 LPS altitude_init(LPS::sa0State addr);
 void gyroreader(L3G gyro, data_t *gyroData);

@@ -64,14 +64,14 @@ void readKeypad(Keypad keypad) {
 			}
 		}	
 	}
-	
 	Serial.println(keydata);
+	Serial1.write(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
-		Serial.write(keydata);
+		Serial1.write(keydata);
 		delay(DELAY_KEYPAD);
-		if (Serial.available()) {
-			Serial.readBytesUntil(0, ack, SIZE_ACK);
+		if (Serial1.available()) {
+			Serial1.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';
 		}
 	}

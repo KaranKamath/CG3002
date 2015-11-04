@@ -88,7 +88,7 @@ void readDistanceSensors(void *p)
 		ultrasound(sonar_right, sonar_left, sonar_stick, &dataRead);
 		infrared(&dataRead);
 		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
-		xQueueSendToBack(report, &dataRead, 500);
+		//xQueueSendToBack(report, &dataRead, 500);
 			
 		vTaskDelay(DELAY_DISTANCE);
 	}		

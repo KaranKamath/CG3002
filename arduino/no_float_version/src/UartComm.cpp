@@ -13,23 +13,23 @@
 #define SIZE_ACK 3
 
 void setupUart() {
-//	Serial1.begin(BAUD_RATE);
+	Serial1.begin(BAUD_RATE);
 	handshake();
 }
 
 void handshake(void) {
 	char ack[SIZE_ACK + 2];
 	while (strcmp(ack, "ACK") != 0) {
-		Serial.write("BEGIN\n");
+		Serial1.write("BEGIN\n");
 		delay(DELAY_UART);
-		if (Serial.available()) {
-			Serial.readBytesUntil(0, ack, SIZE_ACK);
+		if (Serial1.available()) {
+			Serial1.readBytesUntil(0, ack, SIZE_ACK);
 			ack[SIZE_ACK] = '\0';
 		}
 	}
 
 	Serial.println(ack);
-//	Serial1.write("ACK\n");
+	Serial1.write("ACK\n");
 }
 
 void sendData(void *p) {
@@ -49,7 +49,7 @@ void sendData(void *p) {
 			}
 			
 			Serial.print(toSend);
-//			Serial1.write(toSend);
+			Serial1.write(toSend);
 		} 
 	}
 }
