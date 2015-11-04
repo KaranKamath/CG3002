@@ -24,7 +24,8 @@ INDEX_GYRO_X = -3
 
 class Localizer(object):
 
-    imu_timestamp = now()
+    foot_imu_timestamp = now()
+    back_imu_timestamp = now()
     mag_min = [32767, 32767, 32767]
     mag_max = [-32768, -32768, -32768]
     coords_delay = 4
@@ -59,7 +60,6 @@ class Localizer(object):
         return True
 
     def _get_heading(self, imu_data):
-        # a = [-16100, 1300, 500]
         raw_heading = None
         for data in imu_data:
             a = data[1:4]
@@ -67,9 +67,8 @@ class Localizer(object):
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
             raw_heading = self._filter_heading(raw_heading)
-            self._is_interference(data[INDEX_GYRO_X], raw_heading)
-            self.prev_heading = raw_heading
-
+            # self._is_interference(data[INDEX_GYRO_X], raw_heading)
+            # self.prev_heading = raw_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 
@@ -99,18 +98,22 @@ class Localizer(object):
     def _process_imu(self, imu_data):
         if not imu_data:
             return
-        latest_imu_data = imu_data[-1]
-        altitude = self._get_altitude(latest_imu_data)
-        heading = self._get_heading(imu_data)
-        x, y = self._get_coords(imu_data, heading)
+        altitude = self._get_altitude(imu_data['back'][-1])
+        heading = self._get_heading(imu_data['back'])
+        x, y = self._get_coords(imu_data['foot'], heading)
         self.db.insert_location(x, y, heading, altitude)
         self.log.info('Updated location to %s, %s, %s, %s',
                       x, y, heading, altitude)
 
     def _get_latest_imu_readings(self):
-        data = self.db.fetch_data(sid=0, since=self.imu_timestamp)
-        self.imu_timestamp = data[-1][0]
-        return [d[2] for d in data]
+        foot_data = self.db.fetch_data(sid=0, since=self.foot_imu_timestamp)
+        self.foot_imu_timestamp = foot_data[-1][0]
+        back_data = self.db.fetch_data(sid=1, since=self.back_imu_timestamp)
+        self.back_imu_timestamp = back_data[-1][0]
+        return {
+            'foot': [d[2] for d in foot_data],
+            'back': [d[2] for d in back_data]
+        }
 
     def _initalize_location(self):
         timestamp, x, y, heading, alt = self.db.fetch_location()
@@ -125,7 +128,6 @@ class Localizer(object):
         self._initalize_location()
         while True:
             if self.db.is_reset():
-                self.log.info("got reset")
                 self._initalize_location()
             data = self._get_latest_imu_readings()
             self._process_imu(data)

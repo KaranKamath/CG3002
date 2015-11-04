@@ -135,7 +135,6 @@ class Navigator(object):
         self.db.insert_location(self.graph[self.origin]['x'],
                                 self.graph[self.origin]['y'],
                                 self.north, 0, is_reset=True)
-        self.log.info(self.db.is_reset())
 
     def _generate_path(self):
         self.log.info('Generating path...')
@@ -175,6 +174,7 @@ class Navigator(object):
 
     def _node_reached(self):
         self.audio.prompt_node_reached(self.next_node_id)
+        self.current_prompt = None
         self.log.info('Reached node %s', self.next_node_id)
         if self.next_node['name'] == 'Stairwell':
             self.audio.prompt_stairs()
@@ -231,11 +231,10 @@ class Navigator(object):
                 self._navigate_to_next_node()
                 time.sleep(0.5)
             self.navi_chunks.pop(0)
+        self.audio.prompt(PromptDirn.end)
 
     def stop(self):
         self.navigation_finished = True
-        self.current_prompt = PromptDirn.end
-        self.audio.prompt(self.current_prompt)
 
 
 nav = Navigator(logger)

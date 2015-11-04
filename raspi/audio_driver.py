@@ -42,7 +42,7 @@ class AudioDriver(object):
             self._play([PLAYER, PROMPTS[prompt_type]])
         else:
             args = [PLAYER, PROMPTS[prompt_type]]
-            for digit in str(int(val)):
+            for digit in str(int(abs(val))):
                 args.append(DIGITS[int(digit)])
             args.append(CENTIMETERS if prompt_type == PromptDirn.straight
                         else DEGREES)
