@@ -22,6 +22,7 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 THRESHOLD_TURN = 1500
 THRESHOLD_HEADING = 20
 INDEX_GYRO_X = -3
+CALIBRATE_COUNT = 1000
 
 
 class Localizer(object):
@@ -71,13 +72,13 @@ class Localizer(object):
             m = data[4:7]
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-            self.kalman_heading_mean, self.kalman_heading_covariance = self.kf.filter_update(
-                self.kalman_heading_mean, 
-                self.kalman_heading_covariance, 
-                raw_heading)
-            raw_heading = self.kalman_heading_mean[0]
+            # self.kalman_heading_mean, self.kalman_heading_covariance = self.kf.filter_update(
+            #     self.kalman_heading_mean, 
+            #     self.kalman_heading_covariance, 
+            #     raw_heading)
+            # raw_heading = int(round(self.kalman_heading_mean[0][0]))
             raw_heading = self._filter_heading(raw_heading)
-            self.prev_heading = raw_heading
+            # self.prev_heading = raw_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 
@@ -108,7 +109,7 @@ class Localizer(object):
         if not imu_data:
             return
         altitude = self._get_altitude(imu_data['back'][-1])
-        foot_heading = self._get_heading(imu_data['foot'])
+        # foot_heading = self._get_heading(imu_data['foot'])
         heading = self._get_heading(imu_data['back'])
         x, y = self._get_coords(imu_data['foot'], heading)
         with open('/home/pi/test_data.txt', 'a') as f:
@@ -117,7 +118,7 @@ class Localizer(object):
             f.write(str(imu_data['back'][-1][-3]) + '\n')
         self.db.insert_location(x, y, heading, altitude)
         self.log.info('Updated location to %s, %s, %s, %s',
-                      x, y, heading, foot_heading)
+                      x, y, heading, altitude)
 
     def _get_latest_imu_readings(self):
         foot_data = self.db.fetch_data(sid=0, since=self.foot_imu_timestamp)
@@ -129,6 +130,19 @@ class Localizer(object):
             'back': [d[2] for d in back_data]
         }
 
+    def _calibrate_heading(self):
+        data_count = 0
+        while data_count < CALIBRATE_COUNT:
+            data = self._get_latest_imu_readings()
+            for d in data['back']:
+                m = d[4:7]
+                for i in range(3):
+                    if m[i] > self.mag_max[i]:
+                        self.mag_max[i] = m[i]
+                    if m[i] < self.mag_min[i]:
+                        self.mag_min[i] = m[i]
+                data_count += 1
+
     def _initalize_location(self):
         timestamp, x, y, heading, alt = self.db.fetch_location()
         self.map_north = heading
@@ -139,6 +153,7 @@ class Localizer(object):
 
     def start(self):
         self.log.info('Waiting for inital x, y and map north...')
+        self._calibrate_heading()
         self._initalize_location()
         while True:
             if self.db.is_reset():
