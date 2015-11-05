@@ -72,8 +72,8 @@ class Localizer(object):
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
 
-            kalman_heading_mean, kalman_heading_covariance = kf.filter_update(kalman_heading_mean, kalman_heading_covariance, raw_heading)
-            raw_heading = kalman_heading_mean[0]
+            self.kalman_heading_mean, self.kalman_heading_covariance = kf.filter_update(self.kalman_heading_mean, self.kalman_heading_covariance, raw_heading)
+            raw_heading = self.kalman_heading_mean[0]
             raw_heading = self._filter_heading(raw_heading)
             # self._is_interference(data[INDEX_GYRO_X], raw_heading)
             self.prev_heading = raw_heading
