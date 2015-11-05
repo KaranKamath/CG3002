@@ -71,11 +71,10 @@ class Localizer(object):
             m = data[4:7]
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-
-            kalman_heading_mean, kalman_heading_covariance = kf.filter_update(kalman_heading_mean, kalman_heading_covariance, raw_heading)
+            kalman_heading_mean, kalman_heading_covariance = kf.filter_update(
+                kalman_heading_mean, kalman_heading_covariance, raw_heading)
             raw_heading = kalman_heading_mean[0]
             raw_heading = self._filter_heading(raw_heading)
-            # self._is_interference(data[INDEX_GYRO_X], raw_heading)
             self.prev_heading = raw_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
@@ -107,11 +106,16 @@ class Localizer(object):
         if not imu_data:
             return
         altitude = self._get_altitude(imu_data['back'][-1])
+        foot_heading = self._get_heading(imu_data['foot'])
         heading = self._get_heading(imu_data['back'])
         x, y = self._get_coords(imu_data['foot'], heading)
+        with open('/home/pi/test_data.txt', 'a') as f:
+            f.write(str(heading) + ', ')
+            f.write(str(imu_data['foot'][-1][-2]) + ', ')
+            f.write(str(imu_data['back'][-1][-3]) + '\n')
         self.db.insert_location(x, y, heading, altitude)
         self.log.info('Updated location to %s, %s, %s, %s',
-                      x, y, heading, altitude)
+                      x, y, heading, foot_heading)
 
     def _get_latest_imu_readings(self):
         foot_data = self.db.fetch_data(sid=0, since=self.foot_imu_timestamp)
