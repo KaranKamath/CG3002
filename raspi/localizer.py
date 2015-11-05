@@ -3,6 +3,8 @@ import argparse
 import logging
 import sys
 import time
+import numpy as np
+from pykalman import KalmanFilter
 from math import atan2, pi
 from scipy.signal import medfilt
 from db import DB
@@ -33,6 +35,9 @@ class Localizer(object):
     median_window = []
     prev_heading = None
     heading_offset = 0
+    kalman_heading_mean = np.zeros(1,1)
+    kalman_heading_covariance = np.zeros(1,1)
+    kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def __init__(self, logger):
         self.db = DB(logger)
@@ -66,9 +71,12 @@ class Localizer(object):
             m = data[4:7]
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
+
+            kalman_heading_mean, kalman_heading_covariance = kf.filter_update(kalman_heading_mean, kalman_heading_covariance, raw_heading)
+            raw_heading = kalman_heading_mean[0]
             raw_heading = self._filter_heading(raw_heading)
             # self._is_interference(data[INDEX_GYRO_X], raw_heading)
-            # self.prev_heading = raw_heading
+            self.prev_heading = raw_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 
