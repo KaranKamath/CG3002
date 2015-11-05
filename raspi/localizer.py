@@ -35,8 +35,8 @@ class Localizer(object):
     median_window = []
     prev_heading = None
     heading_offset = 0
-    kalman_heading_mean = np.zeros(1,1)
-    kalman_heading_covariance = np.zeros(1,1)
+    kalman_heading_mean = np.zeros((1,1))
+    kalman_heading_covariance = np.zeros((1,1))
     kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def __init__(self, logger):
