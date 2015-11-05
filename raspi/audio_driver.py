@@ -17,8 +17,6 @@ PROMPTS = {
     PromptDirn.end: get_audio_path('dest_reached.wav')
 }
 DIGITS = [get_audio_path(str(n) + '.wav') for n in range(10)]
-DEGREES = get_audio_path('degrees.wav')
-CENTIMETERS = get_audio_path('centimeters.wav')
 NODE_REACHED = get_audio_path('node_reached.wav')
 STAIRS = get_audio_path('stairs.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
@@ -58,8 +56,6 @@ class AudioDriver(object):
             args = [PLAYER, PROMPTS[prompt_type]]
             for digit in str(int(abs(val))):
                 args.append(DIGITS[int(digit)])
-            args.append(CENTIMETERS if prompt_type == PromptDirn.straight
-                        else DEGREES)
             self._play(args)
 
     def prompt_node_reached(self, node_id):
