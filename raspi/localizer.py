@@ -37,12 +37,12 @@ class Localizer(object):
     heading_offset = 0
     kalman_heading_mean = np.zeros((1,1))
     kalman_heading_covariance = np.zeros((1,1))
-    kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def __init__(self, logger):
         self.db = DB(logger)
         self.sc = StepCounter(logger)
         self.log = logger
+        self.kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def _get_altitude(self, data):
         return data[0] / 1000.0
@@ -71,8 +71,7 @@ class Localizer(object):
             m = data[4:7]
             f = [0, 0, -1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-
-            self.kalman_heading_mean, self.kalman_heading_covariance = kf.filter_update(
+            self.kalman_heading_mean, self.kalman_heading_covariance = self.kf.filter_update(
                 self.kalman_heading_mean, 
                 self.kalman_heading_covariance, 
                 raw_heading)
