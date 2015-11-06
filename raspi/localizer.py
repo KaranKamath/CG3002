@@ -82,9 +82,9 @@ class Localizer(object):
                                                   self.map_north)
 
     def _calculate_raw_heading(self, a, m, f):
-        m = (m[0] - (self.mag_min[0] + self.mag_max[0]) / 2,
-             m[1] - (self.mag_min[1] + self.mag_max[1]) / 2,
-             m[2] - (self.mag_min[2] + self.mag_max[2]) / 2)
+        m = (m[0] - (self.mag_min[0] + self.mag_max[0]) * 1.0 / 2,
+             m[1] - (self.mag_min[1] + self.mag_max[1]) * 1.0 / 2,
+             m[2] - (self.mag_min[2] + self.mag_max[2]) * 1.0 / 2)
         e = normalize_3d(cross_3d(m, a))
         n = normalize_3d(cross_3d(a, e))
         heading = atan2(dot_3d(e, f), dot_3d(n, f)) * 180 / pi
