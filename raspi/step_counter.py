@@ -2,7 +2,7 @@ from math import sin, cos, radians
 import logging
 from enum import Enum
 
-STEP_LENGTH = 36
+STEP_LENGTH = 40
 STEP_THRESHOLD = 5000
 
 

@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 import numpy as np
-from pykalman import KalmanFilter
+# from pykalman import KalmanFilter
 from math import atan2, pi
 from scipy.signal import medfilt
 from db import DB
@@ -22,7 +22,6 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 THRESHOLD_TURN = 1500
 THRESHOLD_HEADING = 20
 INDEX_GYRO_X = -3
-CALIBRATE_COUNT = 1000
 
 
 class Localizer(object):
@@ -36,14 +35,14 @@ class Localizer(object):
     median_window = []
     prev_heading = None
     heading_offset = 0
-    kalman_heading_mean = np.zeros((1,1))
-    kalman_heading_covariance = np.zeros((1,1))
+    kalman_heading_mean = np.zeros((1, 1))
+    kalman_heading_covariance = np.zeros((1, 1))
 
     def __init__(self, logger):
         self.db = DB(logger)
         self.sc = StepCounter(logger)
         self.log = logger
-        self.kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
+        # self.kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def _get_altitude(self, data):
         return data[0] / 1000.0
@@ -112,10 +111,10 @@ class Localizer(object):
         # foot_heading = self._get_heading(imu_data['foot'])
         heading = self._get_heading(imu_data['back'])
         x, y = self._get_coords(imu_data['foot'], heading)
-        with open('/home/pi/test_data.txt', 'a') as f:
-            f.write(str(heading) + ', ')
-            f.write(str(imu_data['foot'][-1][-2]) + ', ')
-            f.write(str(imu_data['back'][-1][-3]) + '\n')
+        # with open('/home/pi/test_data.txt', 'a') as f:
+        #     f.write(str(heading) + ', ')
+        #     f.write(str(imu_data['foot'][-1][-2]) + ', ')
+        #     f.write(str(imu_data['back'][-1][-3]) + '\n')
         self.db.insert_location(x, y, heading, altitude)
         self.log.info('Updated location to %s, %s, %s, %s',
                       x, y, heading, altitude)
@@ -130,19 +129,6 @@ class Localizer(object):
             'back': [d[2] for d in back_data]
         }
 
-    def _calibrate_heading(self):
-        data_count = 0
-        while data_count < CALIBRATE_COUNT:
-            data = self._get_latest_imu_readings()
-            for d in data['back']:
-                m = d[4:7]
-                for i in range(3):
-                    if m[i] > self.mag_max[i]:
-                        self.mag_max[i] = m[i]
-                    if m[i] < self.mag_min[i]:
-                        self.mag_min[i] = m[i]
-                data_count += 1
-
     def _initalize_location(self):
         timestamp, x, y, heading, alt = self.db.fetch_location()
         self.map_north = heading
@@ -153,7 +139,6 @@ class Localizer(object):
 
     def start(self):
         self.log.info('Waiting for inital x, y and map north...')
-        self._calibrate_heading()
         self._initalize_location()
         while True:
             if self.db.is_reset():
