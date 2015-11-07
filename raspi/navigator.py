@@ -160,11 +160,7 @@ class Navigator(object):
 
     def _align_to_next_node(self, num_of_steps_to_next_node):
         self.log.info("Aligning...")
-        if self.prev_node is None:
-            # TODO special case
-            self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
-            return
-        angle_to_turn = self._calc_angle_bwt_lines(
+        angle_to_turn = self._calc_angle_to_turn(
             self.prev_node['x'], self.prev_node['y'],
             self.current_node['x'], self.current_node['y'],
             self.next_node['x'], self.next_node['y']
@@ -173,7 +169,6 @@ class Navigator(object):
         if angle_to_turn == 0:
             self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
             return
-
         # turn needed
         if angle_to_turn > 0:
             self.audio.prompt(PromptDirn.left, angle_to_turn)
@@ -183,8 +178,20 @@ class Navigator(object):
         self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
 
     def _wait_for_angle_turn(self, angle_to_turn):
-        back_data = self.db.fetch_data(sid=0, since=now())
-        # TODO
+        self.log.info("Waiting for turn by %d", angle_to_turn)
+        timestamp = now()
+        back_data = self.db.fetch_data(sid=0, since=timestamp)
+        timestamp = back_data[-1][0]
+        self.hc.clear_filter()
+        current_heading = self.hc.get_heading(back_data)
+        turned_angle = 0
+        while abs(turned_angle - angle_to_turn) > ANGLE_THRESHOLD:
+            back_data = self.db.fetch_data(sid=0, since=timestamp)
+            timestamp = back_data[-1][0]
+            heading = self.hc.get_heading(back_data)
+            turned_angle = abs(current_heading - heading)
+            self.log.info("Turned angle: %d", turned_angle)
+        self.log.info("Completed turn")
 
     def _wait_for_steps(self, num_of_steps_to_wait):
         self.log.info("Waiting for %d steps", num_of_steps_to_wait)
@@ -198,6 +205,7 @@ class Navigator(object):
                 if is_step_detected:
                     self.audio.prompt_step()
                     counted_steps += 1
+                    self.log.info("Counted steps: %d", counted_steps)
                 if counted_steps == num_of_steps_to_wait:
                     break
         self.log.info("Completed steps")
@@ -230,9 +238,24 @@ class Navigator(object):
         else:
             self.log.info('Navigating to node %s', self.next_node_id)
 
-    def _calc_angle_bwt_lines(x1, y1, x2, y2, x3, y3):
+    def _calc_angle_to_turn(x1, y1, x2, y2, x3, y3):
+        if x1 is None or y1 is None:
+            true_angle = self._calc_true_angle()
+            v_a = [(x1 - x2), (y1 - y2)]
+            v_b = [1, 0]
+            angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
+            return angle_to_turn_to - true_angle
         v_a = [(x1 - x2), (y1 - y2)]
         v_b = [(x2 - x3), (y2, - y3)]
+        return self._angle_bw_vectors(v_a, v_b)
+
+    def _calc_true_angle(self, x1, y1, x2, y2):
+        back_data = self.db.fetch_data(sid=0, since=now())
+        self.hc.clear_filter()
+        self.hc.set_map_north(self.north)
+        return self.hc.get_heading(back_data, true_heading=True)
+
+    def _angle_bw_vectors(v_a, v_b):
         d = dot_product(v_a, v_b)
         mag_a = dot_product(v_a, v_a) ** 0.5
         mag_b = dot_product(v_b, v_b) ** 0.5

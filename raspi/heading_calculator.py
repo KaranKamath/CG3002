@@ -26,16 +26,21 @@ class HeadingCalculator():
     def set_map_north(self, map_north):
         self.map_north = map_north
 
-    def get_heading(self, imu_data):
+    def clear_filter(self):
+        self.median_window = []
+
+    def get_heading(self, imu_data, true_heading=False):
         heading = None
         for data in imu_data:
             a = data[1:4]
-            m = self._transform_m(data[4:7])
+            m = data[4:7]
             f = [0, 0, 1]
             heading = self._filter_heading(
                 self._calculate_raw_heading(a, m, f))
         if not heading:
             return 0
+        if not true_heading:
+            return normalize_360(heading)
         return self._convert_heading_to_horizontal_axis(heading)
 
     def _transform_m(self, m):

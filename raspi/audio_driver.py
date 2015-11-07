@@ -31,7 +31,7 @@ class AudioDriver(object):
     def __init__(self):
         self.process = None
 
-    def _play(self, args, async=True):
+    def _play(self, args, async=False):
         if self.process:
             self.process.kill()
         with open(os.devnull, 'w') as null:
