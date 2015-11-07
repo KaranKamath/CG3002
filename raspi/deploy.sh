@@ -1,7 +1,7 @@
 echo "Deploying..."
-rsync -r --delete ../raspi/ pi@$1:~/cg3002/
 scp pi@$1:/home/pi/db/uart.db backups/uart.$(date '+%I-%M-%S').db
-scp pi@$1:/home/pi/test_data.txt backups/test_data.$(date '+%I-%M-%S').txt
+scp -r 'pi@192.168.43.77:/home/pi/cg3002/images/*' ../images/image.$(date '+%s').jpg
+rsync -r --delete ../raspi/ pi@$1:~/cg3002/
 echo "Done."
 
 COMMAND="cd ~/cg3002;"
