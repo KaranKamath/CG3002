@@ -4,7 +4,6 @@ import logging
 import sys
 import time
 import numpy as np
-# from pykalman import KalmanFilter
 from math import atan2, pi
 from scipy.signal import medfilt
 from db import DB
@@ -42,7 +41,6 @@ class Localizer(object):
         self.db = DB(logger)
         self.sc = StepCounter(logger)
         self.log = logger
-        # self.kf = KalmanFilter(n_dim_state=1, n_dim_obs=1)
 
     def _get_altitude(self, data):
         return data[0] / 1000.0
@@ -69,15 +67,9 @@ class Localizer(object):
         for data in imu_data:
             a = data[1:4]
             m = data[4:7]
-            f = [0, 0, -1]
+            f = [0, 0, 1]
             raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-            # self.kalman_heading_mean, self.kalman_heading_covariance = self.kf.filter_update(
-            #     self.kalman_heading_mean, 
-            #     self.kalman_heading_covariance, 
-            #     raw_heading)
-            # raw_heading = int(round(self.kalman_heading_mean[0][0]))
             raw_heading = self._filter_heading(raw_heading)
-            # self.prev_heading = raw_heading
         return convert_heading_to_horizontal_axis(raw_heading,
                                                   self.map_north)
 
@@ -108,7 +100,6 @@ class Localizer(object):
         if not imu_data:
             return
         altitude = self._get_altitude(imu_data['back'][-1])
-        # foot_heading = self._get_heading(imu_data['foot'])
         heading = self._get_heading(imu_data['back'])
         x, y = self._get_coords(imu_data['foot'], heading)
         # with open('/home/pi/test_data.txt', 'a') as f:
