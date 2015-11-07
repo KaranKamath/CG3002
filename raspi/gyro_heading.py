@@ -1,9 +1,8 @@
 from math import atan2, pi
 
-ACC_SENSITIVITY = 32768.0 / 2
-GYRO_SENSITIVITY = 32768 / 245
+ACC_SENSITIVITY = 8192
+GYRO_SENSITIVITY = 65.536
 dt = 0.1
-
 
 def get_new_heading(angle, accData, gyroData):
     angle += gyroData[2] * dt / GYRO_SENSITIVITY
