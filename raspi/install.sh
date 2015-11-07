@@ -6,21 +6,24 @@ echo "Installing..."
 # sudo insserv tweet-ip
 
 sudo service uart stop
-sudo rm -f /home/pi/logs/uart.log*
+sudo truncate -s 0 /home/pi/logs/uart.log
+sudo rm -f /home/pi/logs/uart.log.*
 touch /home/pi/logs/uart.log
 sudo cp services/uart-service.sh /etc/init.d/uart
 sudo chmod +x /etc/init.d/uart
 sudo insserv uart
 
 sudo service navi stop
-sudo rm -f /home/pi/logs/navi.log*
+sudo truncate -s 0 /home/pi/logs/navi.log
+sudo rm -f /home/pi/logs/navi.log.*
 touch /home/pi/logs/navi.log
 sudo cp services/navi-service.sh /etc/init.d/navi
 sudo chmod +x /etc/init.d/navi
 sudo insserv navi
 
 sudo service localizer stop
-sudo rm -f /home/pi/logs/localizer.log*
+sudo truncate -s 0 /home/pi/logs/localizer.log
+sudo rm -f /home/pi/logs/localizer.log.*
 touch /home/pi/logs/localizer.log
 sudo cp services/localizer-service.sh /etc/init.d/localizer
 sudo chmod +x /etc/init.d/localizer

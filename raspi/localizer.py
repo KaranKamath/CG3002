@@ -31,8 +31,10 @@ class Localizer(object):
         return data[0] / 1000.0
 
     def _get_heading(self, imu_data):
+        # return self.hc.get_heading(imu_data)
         if self.gyro_angle is None:
             self.gyro_angle = self.hc.get_heading(imu_data)
+            self.log.info('Set to: ' + str(self.gyro_angle))
             return self.gyro_angle
         else:
             heading = self.hc.get_heading(imu_data)
@@ -40,8 +42,8 @@ class Localizer(object):
                 a = data[1:4]
                 g = data[7:]
                 new_angle = get_new_heading(self.gyro_angle, a, g)
-                self.log.info(new_angle)
                 self.gyro_angle = new_angle
+            self.log.info('Mag: ' + str(heading) + ', Gyro: ' + str(self.gyro_angle))
             return heading
 
     def _get_coords(self, data, heading):
@@ -61,8 +63,8 @@ class Localizer(object):
         #     f.write(str(imu_data['foot'][-1][-2]) + ', ')
         #     f.write(str(imu_data['back'][-1][-3]) + '\n')
         self.db.insert_location(x, y, heading, altitude)
-        self.log.info('Updated location to %s, %s, %s, %s',
-                      x, y, heading, altitude)
+        # self.log.info('Updated location to %s, %s, %s, %s',
+        #               x, y, heading, altitude)
 
     def _get_latest_imu_readings(self):
         foot_data = self.db.fetch_data(sid=0, since=self.foot_imu_timestamp)

@@ -39,6 +39,14 @@ def now():
     return int(round(time.time() * 1000))
 
 
+def normalize_360(heading):
+    while heading > 180:
+        heading -= 360
+    while heading < -180:
+        heading += 360
+    return heading
+
+
 def dijkstra(graph, source, target):
     """Dijkstra's shortest path algorithm"""
     queue = PriorityQueue()

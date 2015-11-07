@@ -8,9 +8,8 @@ from collections import deque
 from db import DB
 from maps_repo import MapsRepo
 from prompts_enum import PromptDirn
-from directions_utils import normalize
 from audio_driver import AudioDriver
-from utils import CommonLogger, dijkstra, euclidean_dist, init_logger
+from utils import CommonLogger, dijkstra, euclidean_dist, init_logger, normalize_360
 
 
 LOG_FILENAME = '/home/pi/logs/navi.log'
@@ -190,7 +189,7 @@ class Navigator(object):
         if distance < self.DISTANCE_THRESHOLD:
             return (distance, 0)
         turn_to_angle = degrees(atan2(node_y - y, node_x - x)) - heading
-        return (distance, int(round(normalize(turn_to_angle))))
+        return (distance, int(round(normalize_360(turn_to_angle))))
 
     def _generate_prompt(self, angle):
         if abs(angle) < self.ANGLE_THRESHOLD:
