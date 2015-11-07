@@ -22,7 +22,7 @@ sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 STEP_LENGTH = 40.0
-ANGLE_THRESHOLD = 20
+ANGLE_THRESHOLD = 15
 
 
 class Navigator(object):
