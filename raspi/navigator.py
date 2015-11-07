@@ -2,14 +2,18 @@
 import logging
 import sys
 import time
-from math import atan2, degrees
+from math import atan2, degrees, acos
 from collections import deque
 
 from db import DB
 from maps_repo import MapsRepo
 from prompts_enum import PromptDirn
 from audio_driver import AudioDriver
-from utils import CommonLogger, dijkstra, euclidean_dist, init_logger, normalize_360
+from step_counter import StepCounter
+from heading_calculator import HeadingCalculator
+from vector_ops import dot_product
+from utils import CommonLogger, dijkstra, euclidean_dist, init_logger,\
+    normalize_360, now
 
 
 LOG_FILENAME = '/home/pi/logs/navi.log'
@@ -17,15 +21,11 @@ logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
+STEP_LENGTH = 40.0
+ANGLE_THRESHOLD = 20
+
 
 class Navigator(object):
-
-    ANGLE_THRESHOLD = 20
-    RELAXED_ANGLE_THRESHOLD = 10
-    DISTANCE_THRESHOLD = 75
-    location_tstmp = 0
-    audio_delay = 6  # 0.5s * 6 = 3s
-    audio_offset = 0
 
     def __init__(self, logger):
         self.log = logger
@@ -33,6 +33,8 @@ class Navigator(object):
         self.db = DB(logger)
         self.maps = MapsRepo()
         self.audio = AudioDriver()
+        self.sc = StepCounter(logger)
+        self.hc = HeadingCalculator(logger)
         self.current_prompt = None
         self.navigation_finished = False
 
@@ -45,11 +47,27 @@ class Navigator(object):
         return self.path[self.next_node_idx]
 
     @property
-    def user_location(self):
-        while self.db.is_reset():
-            time.sleep(0.1)
-        ts, x, y, h, alt = self.db.fetch_location()
-        return (x, y, h, alt)
+    def current_node(self):
+        return self.graph[self.current_node_id]
+
+    @property
+    def current_node_id(self):
+        return self.path[self.next_node_idx - 1]
+
+    @property
+    def prev_node(self):
+        prev_node_id = self.prev_node_id
+        if prev_node_id:
+            return self.graph[prev_node_id]
+        else:
+            return None
+
+    @property
+    def prev_node_id(self):
+        if self.next_node_idx >= 2:
+            return self.path[self.next_node_idx - 2]
+        else:
+            return None
 
     def _wait_for_origin_and_destination(self):
         self.log.info('Waiting for origin and destination...')
@@ -138,43 +156,72 @@ class Navigator(object):
         self.log.info('Generating path...')
         self.path = dijkstra(self.graph, self.origin, self.destination)
         self.log.info('Got path: %s', str(self.path))
+        self.next_node_idx = 1
 
-    def _acquire_next_node(self):
-        x, y, heading, alt = self.user_location
-        min_dist = sys.maxint
-        min_dist_node_idx = 0
-        for i in range(len(self.path)):
-            node = self.path[i]
-            node_x = self.graph[node]['x']
-            node_y = self.graph[node]['y']
-            dist = euclidean_dist(node_x, node_y, x, y)
-            if dist < min_dist and dist > self.DISTANCE_THRESHOLD:
-                min_dist = dist
-                min_dist_node_idx = i
-        self.next_node_idx = min_dist_node_idx
+    def _align_to_next_node(self, num_of_steps_to_next_node):
+        self.log.info("Aligning...")
+        if self.prev_node is None:
+            # TODO special case
+            self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
+            return
+        angle_to_turn = self._calc_angle_bwt_lines(
+            self.prev_node['x'], self.prev_node['y'],
+            self.current_node['x'], self.current_node['y'],
+            self.next_node['x'], self.next_node['y']
+        )
+        # straight ahead
+        if angle_to_turn == 0:
+            self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
+            return
+
+        # turn needed
+        if angle_to_turn > 0:
+            self.audio.prompt(PromptDirn.left, angle_to_turn)
+        else:
+            self.audio.prompt(PromptDirn.right, angle_to_turn)
+        self._wait_for_angle_turn(angle_to_turn)
+        self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
+
+    def _wait_for_angle_turn(self, angle_to_turn):
+        back_data = self.db.fetch_data(sid=0, since=now())
+        # TODO
+
+    def _wait_for_steps(self, num_of_steps_to_wait):
+        self.log.info("Waiting for %d steps", num_of_steps_to_wait)
+        counted_steps = 0
+        timestamp = now()
+        while counted_steps != num_of_steps_to_wait:
+            foot_data = self.db.fetch_data(sid=1, since=timestamp)
+            timestamp = foot_data[-1][0]
+            for d in [d[2] for d in foot_data]:
+                is_step_detected = self.sc.detect_step(d)
+                if is_step_detected:
+                    self.audio.prompt_step()
+                    counted_steps += 1
+                if counted_steps == num_of_steps_to_wait:
+                    break
+        self.log.info("Completed steps")
+
+    def _calc_num_steps_to_next_node(self):
+        distance = euclidean_dist(
+            self.current_node['x'], self.current_node['y'],
+            self.next_node['x'], self.next_node['y']
+        )
+        num_of_steps_to_next_node = int(round(distance / STEP_LENGTH))
+        self.log.info("Steps to walk: " + str(num_of_steps_to_next_node))
+        return num_of_steps_to_next_node
 
     def _navigate_to_next_node(self):
-        x, y, heading, alt = self.user_location
-        dist, angle = self._calc_directions(x, y, self.next_node['x'],
-                                            self.next_node['y'], heading)
-
-        self.log.info('Next node %s @[%scm, %sdeg]', self.next_node_id,
-                      dist, angle)
-        if self._is_within_node(dist, angle):
-            self._node_reached()
-        else:
-            new_prompt = self._generate_prompt(angle)
-            self._play_prompt(new_prompt, angle, dist)
-            self.current_prompt = new_prompt
-
-    def _is_within_node(self, dist, angle):
-        return dist < self.DISTANCE_THRESHOLD
+        num_of_steps_to_next_node = self._calc_num_steps_to_next_node()
+        self._align_to_next_node(num_of_steps_to_next_node)
+        self._wait_for_steps(num_of_steps_to_next_node)
+        self._node_reached()
 
     def _node_reached(self):
         self.audio.prompt_node_reached(self.next_node_id)
         self.current_prompt = None
         self.log.info('Reached node %s', self.next_node_id)
-        if self.next_node['name'] == 'Stairwell':
+        if self.current_node['name'] == 'Stairwell':
             self.audio.prompt_stairs()
         self.next_node_idx += 1
         if self.next_node_idx == len(self.path):
@@ -182,29 +229,15 @@ class Navigator(object):
             self.stop()
         else:
             self.log.info('Navigating to node %s', self.next_node_id)
-            self._navigate_to_next_node()
 
-    def _calc_directions(self, x, y, node_x, node_y, heading):
-        distance = int(round(euclidean_dist(node_x, node_y, x, y)))
-        if distance < self.DISTANCE_THRESHOLD:
-            return (distance, 0)
-        turn_to_angle = degrees(atan2(node_y - y, node_x - x)) - heading
-        return (distance, int(round(normalize_360(turn_to_angle))))
-
-    def _generate_prompt(self, angle):
-        if abs(angle) < self.ANGLE_THRESHOLD:
-            if self.current_prompt is None or \
-                    (abs(angle) <= self.RELAXED_ANGLE_THRESHOLD and
-                     (self.current_prompt == PromptDirn.right or
-                      self.current_prompt == PromptDirn.left)):
-                new_prompt = PromptDirn.straight
-            else:
-                new_prompt = self.current_prompt
-        elif angle > 0:
-            new_prompt = PromptDirn.left
-        else:
-            new_prompt = PromptDirn.right
-        return new_prompt
+    def _calc_angle_bwt_lines(x1, y1, x2, y2, x3, y3):
+        v_a = [(x1 - x2), (y1 - y2)]
+        v_b = [(x2 - x3), (y2, - y3)]
+        d = dot_product(v_a, v_b)
+        mag_a = dot_product(v_a, v_a) ** 0.5
+        mag_b = dot_product(v_b, v_b) ** 0.5
+        cos_val = d / mag_a / mag_b
+        return normalize_360(degrees(acos(cos_val)))
 
     def _play_prompt(self, prompt, angle, dist):
         val = dist if prompt == PromptDirn.straight else angle
@@ -224,10 +257,8 @@ class Navigator(object):
             self._prepare_for_next_navi_chunk()
             self._get_map()
             self._generate_path()
-            self._acquire_next_node()
             while not self.navigation_finished:
                 self._navigate_to_next_node()
-                time.sleep(0.5)
             self.navi_chunks.pop(0)
         self.audio.prompt(PromptDirn.end)
 

@@ -19,6 +19,7 @@ PROMPTS = {
 DIGITS = [get_audio_path(str(n) + '.wav') for n in range(10)]
 NODE_REACHED = get_audio_path('node_reached.wav')
 STAIRS = get_audio_path('stairs.wav')
+STEP = get_audio_path('step.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
 BEGIN = get_audio_path('begin.wav')
 PLAYER = 'afplay' if _platform == 'darwin' else 'play'
@@ -58,6 +59,9 @@ class AudioDriver(object):
                 args.append(DIGITS[int(digit)])
             self._play(args)
 
+    def prompt_step(self):
+        self._play([PLAYER, STEP], async=False)
+        
     def prompt_node_reached(self, node_id):
         args = [PLAYER, NODE_REACHED]
         for digit in str(int(node_id)):

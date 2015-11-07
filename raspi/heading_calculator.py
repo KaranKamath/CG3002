@@ -1,7 +1,7 @@
 from math import sqrt, degrees, atan2, pi
 from scipy.signal import medfilt
 
-from vector_ops import dot_3d, cross_3d, normalize_3d
+from vector_ops import dot_product, cross_3d, normalize_3d
 from utils import euclidean_dist, normalize_360
 
 
@@ -42,14 +42,14 @@ class HeadingCalculator():
         m[0] -= M_BIAS[0]
         m[1] -= M_BIAS[1]
         m[2] -= M_BIAS[2]
-        return [dot_3d(M_TRANSFORMATION[0], m),
-                dot_3d(M_TRANSFORMATION[1], m),
-                dot_3d(M_TRANSFORMATION[2], m)]
+        return [dot_product(M_TRANSFORMATION[0], m),
+                dot_product(M_TRANSFORMATION[1], m),
+                dot_product(M_TRANSFORMATION[2], m)]
 
     def _calculate_raw_heading(self, a, m, f):
         e = normalize_3d(cross_3d(m, a))
         n = normalize_3d(cross_3d(a, e))
-        heading = atan2(dot_3d(e, f), dot_3d(n, f)) * 180 / pi
+        heading = atan2(dot_product(e, f), dot_product(n, f)) * 180 / pi
         return int(round((heading + 360) if heading < 0 else heading))
 
     def _filter_heading(self, heading):
