@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-import argparse
 import sys
 import time
 import serial

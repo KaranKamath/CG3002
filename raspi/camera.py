@@ -7,7 +7,7 @@ with picamera.PiCamera() as camera:
     time.sleep(1)
     for i, filename in enumerate(camera.capture_continuous('images/image{counter:02d}.jpg')):
         print('Captured image %s' % filename)
-        if i == 100:
+        if i == 1000:
             break
-        time.sleep(60)
+        time.sleep(30)
     camera.stop_preview()

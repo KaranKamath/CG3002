@@ -1,94 +1,48 @@
 #!/usr/bin/env python
-import argparse
 import logging
 import sys
 import time
-import numpy as np
-from math import atan2, pi
-from scipy.signal import medfilt
 from db import DB
-from location_approximator import LocationApproximator
 from step_counter import StepCounter
+from heading_calculator import HeadingCalculator
 from utils import CommonLogger, init_logger, now
-from vector_ops import dot_3d, cross_3d, normalize_3d
-from directions_utils import convert_heading_to_horizontal_axis
+
+from gyro_heading import get_new_heading
 
 LOG_FILENAME = '/home/pi/logs/localizer.log'
 logger = init_logger(logging.getLogger(__name__), LOG_FILENAME)
 sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
-THRESHOLD_TURN = 1500
-THRESHOLD_HEADING = 20
-INDEX_GYRO_X = -3
-
 
 class Localizer(object):
 
     foot_imu_timestamp = now()
     back_imu_timestamp = now()
-    mag_min = [32767, 32767, 32767]
-    mag_max = [-32768, -32768, -32768]
-    coords_delay = 4
-    coords_offset = 0
-    median_window = []
-    prev_heading = None
-    heading_offset = 0
-    kalman_heading_mean = np.zeros((1, 1))
-    kalman_heading_covariance = np.zeros((1, 1))
 
     def __init__(self, logger):
         self.db = DB(logger)
         self.sc = StepCounter(logger)
+        self.hc = HeadingCalculator(logger)
         self.log = logger
+        self.gyro_angle = None
 
     def _get_altitude(self, data):
         return data[0] / 1000.0
 
-    def _get_heading_delta(self, new_heading):
-        if self.prev_heading is None:
-            return 0
-        else:
-            return abs(new_heading - self.prev_heading)
-
-    def _is_interference(self, gyroX, new_heading):
-        if abs(gyroX) < THRESHOLD_TURN and \
-                self._get_heading_delta(new_heading) > THRESHOLD_HEADING:
-
-            self.log.info("Interference trigger: gyro:%s heading_delta: %s",
-                          abs(gyroX), self._get_heading_delta(new_heading))
-            self.log.info("Interference Start / Stop")
-            return False
-
-        return True
-
     def _get_heading(self, imu_data):
-        raw_heading = None
-        for data in imu_data:
-            a = data[1:4]
-            m = data[4:7]
-            f = [0, 0, 1]
-            raw_heading = int(round(self._calculate_raw_heading(a, m, f)))
-            raw_heading = self._filter_heading(raw_heading)
-        return convert_heading_to_horizontal_axis(raw_heading,
-                                                  self.map_north)
-
-    def _calculate_raw_heading(self, a, m, f):
-        m = (m[0] - (self.mag_min[0] + self.mag_max[0]) * 1.0 / 2,
-             m[1] - (self.mag_min[1] + self.mag_max[1]) * 1.0 / 2,
-             m[2] - (self.mag_min[2] + self.mag_max[2]) * 1.0 / 2)
-        e = normalize_3d(cross_3d(m, a))
-        n = normalize_3d(cross_3d(a, e))
-        heading = atan2(dot_3d(e, f), dot_3d(n, f)) * 180 / pi
-        return (heading + 360) if heading < 0 else heading
-
-    def _filter_heading(self, heading):
-        self.median_window.append(heading)
-        if len(self.median_window) <= 5:
+        if self.gyro_angle is None:
+            self.gyro_angle = self.hc.get_heading(imu_data)
+            return self.gyro_angle
+        else:
+            heading = self.hc.get_heading(imu_data)
+            for data in imu_data:
+                a = data[1:4]
+                g = data[7:]
+                new_angle = get_new_heading(self.gyro_angle, a, g)
+                self.log.info(new_angle)
+                self.gyro_angle = new_angle
             return heading
-        self.median_window = self.median_window[1:]
-        filtered_heading = medfilt(self.median_window, 5)[2]
-        return filtered_heading
 
     def _get_coords(self, data, heading):
         x, y = None, None
@@ -122,7 +76,7 @@ class Localizer(object):
 
     def _initalize_location(self):
         timestamp, x, y, heading, alt = self.db.fetch_location()
-        self.map_north = heading
+        self.hc.set_map_north(heading)
         self.sc.reset_x_and_y(x, y)
         self.db.clear_reset()
         self.log.info('Set [x, y] to [%s, %s]', x, y)
