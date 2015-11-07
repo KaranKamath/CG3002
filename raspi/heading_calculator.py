@@ -5,10 +5,10 @@ from vector_ops import dot_3d, cross_3d, normalize_3d
 from utils import euclidean_dist
 
 
-M_BIAS = [-171.524, -261.43, -404.003]
-M_TRANSFORMATION = [[9.6, -1.035, -3.597],
-                    [-5.67, 6.852, 2.744],
-                    [1.82, -0.84, 8.638]]
+M_BIAS = [-422.405, -405.466, -453.233]
+M_TRANSFORMATION = [[4.959, 0.327, -0.062],
+                    [-0.27, 6.317, 2.767],
+                    [-0.983, 2.703, 9.556]]
 
 
 class HeadingCalculator():
