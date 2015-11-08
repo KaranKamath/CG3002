@@ -1,12 +1,41 @@
 import time
 import picamera
 import cv2
+import zbar
 from picamera.array import PiRGBArray
 
 DIR_PATH = 'images/'
 RES_HEIGHT = 720
 RES_WIDTH = 1280
 counter = 1
+
+def detect_qr(image):
+    # create a reader
+    scanner = zbar.ImageScanner()
+
+    # configure the reader
+    scanner.parse_config('enable')
+
+    # obtain image data
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY,dstCn=0)
+    pil = Image.fromarray(gray)
+    width, height = pil.size
+    raw = pil.tostring()
+
+
+    # wrap image data
+    image = zbar.Image(width, height, 'Y800', raw)
+
+    # scan the image for barcodes
+    scanner.scan(image)
+
+    # extract results
+    for symbol in image:
+        # do something useful with results
+        if symbol.data == "None":
+            return "Drone bevindt zich buiten het raster"
+        else:
+            return symbol.data
 
 def process_img(img):
     global counter
@@ -33,6 +62,7 @@ with picamera.PiCamera() as camera:
         camera.capture(rawCapture, format="bgr")
         img = rawCapture.array
         process_img(img)
+        detect_qr(img)
         rawCapture.truncate(0)
         time.sleep(1)
 
