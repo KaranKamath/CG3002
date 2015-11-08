@@ -64,7 +64,7 @@ with picamera.PiCamera() as camera:
         camera.capture(rawCapture, format="bgr")
         img = rawCapture.array
         process_img(img)
-        # output = detect_qr(img)
-        # print output
+        output = detect_qr(img)
+        print output
         rawCapture.truncate(0)
         time.sleep(1)
