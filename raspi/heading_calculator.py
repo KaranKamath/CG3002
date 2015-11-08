@@ -2,13 +2,18 @@ from math import sqrt, degrees, atan2, pi
 from scipy.signal import medfilt
 
 from vector_ops import dot_3d, cross_3d, normalize_3d
-from utils import euclidean_dist
+from utils import euclidean_dist, normalize_360
 
 
-M_BIAS = [-422.405, -405.466, -453.233]
-M_TRANSFORMATION = [[4.959, 0.327, -0.062],
-                    [-0.27, 6.317, 2.767],
-                    [-0.983, 2.703, 9.556]]
+# M_BIAS = [-422.405, -405.466, -453.233]
+# M_TRANSFORMATION = [[4.959, 0.327, -0.062],
+#                     [-0.27, 6.317, 2.767],
+#                     [-0.983, 2.703, 9.556]]
+
+M_BIAS = [-171.524, -261.43, -404.003]
+M_TRANSFORMATION = [[9.578, -1.035, -3.597],
+                    [-5.67, 6.852, 2.744],
+                    [1.82, -0.84, 8.638]]
 
 
 class HeadingCalculator():
@@ -55,15 +60,8 @@ class HeadingCalculator():
         filtered_heading = medfilt(self.median_window, 5)[2]
         return filtered_heading
 
-    def _normalize_heading(self, heading):
-        while heading > 180:
-            heading -= 360
-        while heading < -180:
-            heading += 360
-        return heading
-
     def _convert_heading_to_horizontal_axis(self, heading):
-        return self._normalize_heading(90 - self.map_north - heading)
+        return normalize_360(90 - self.map_north - heading)
 
 
 if __name__ == '__main__':
