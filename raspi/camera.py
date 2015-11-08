@@ -22,7 +22,7 @@ def detect_qr(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
     pil = Image.fromarray(gray)
     width, height = pil.size
-    raw = pil.tostring()
+    raw = pil.tobytes()
 
     # wrap image data
     image = zbar.Image(width, height, 'Y800', raw)
@@ -33,7 +33,7 @@ def detect_qr(image):
     # extract results
     for symbol in image:
         # do something useful with results
-        if symbol.data == "None":
+        if symbol.data == None:
             return "Drone bevindt zich buiten het raster"
         else:
             return symbol.data
