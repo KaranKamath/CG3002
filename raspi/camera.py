@@ -1,6 +1,7 @@
 import time
 import picamera
 import cv2
+from picamera.array import PiRGBArray
 
 DIR_PATH = 'images/'
 RES_HEIGHT = 720
@@ -14,9 +15,9 @@ def process_img(img):
     blur = cv2.blur(crop_img, (5,5))                                 
     canny = cv2.Canny(blur, 33, 100)
 
-    cv2.imwrite(DIR + counter + '-blurred.jpg', blur)                               
-    cv2.imwrite(DIR + counter + '-original.jpg', img)                                 
-    cv2.imwrite(DIR + counter + '-canny.jpg', canny)   
+    cv2.imwrite(DIR_PATH + str(counter) + '-blurred.jpg', blur)                               
+    cv2.imwrite(DIR_PATH + str(counter) + '-original.jpg', img)                                 
+    cv2.imwrite(DIR_PATH + str(counter) + '-canny.jpg', canny)   
 
     counter += 1
 
