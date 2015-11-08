@@ -22,7 +22,7 @@ def detect_qr(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
     pil = Image.fromarray(gray)
     width, height = pil.size
-    raw = pil.tostring()
+    raw = pil.tobytes()
 
     # wrap image data
     image = zbar.Image(width, height, 'Y800', raw)
