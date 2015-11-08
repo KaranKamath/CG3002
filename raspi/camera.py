@@ -2,6 +2,7 @@ import time
 import picamera
 import cv2
 import zbar
+import Image
 from picamera.array import PiRGBArray
 
 DIR_PATH = 'images/'
