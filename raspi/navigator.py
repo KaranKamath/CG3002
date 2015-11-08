@@ -190,14 +190,15 @@ class Navigator(object):
             timestamp = back_data[-1][0]
             heading = self.hc.get_heading([d[2] for d in back_data])
             turned_angle = abs(current_heading - heading)
-            self.log.info("Turned angle: %d (%d - %d)", turned_angle, current_heading, heading)
+            self.log.info("Angle: %d (%d - %d)", turned_angle,
+                          current_heading, heading)
         self.log.info("Completed turn")
 
     def _wait_for_steps(self, num_of_steps_to_wait):
         self.log.info("Waiting for %d steps", num_of_steps_to_wait)
         counted_steps = 0
         timestamp = now()
-        while counted_steps != num_of_steps_to_wait:
+        while counted_steps < num_of_steps_to_wait:
             foot_data = self.db.fetch_data(sid=0, since=timestamp)
             timestamp = foot_data[-1][0]
             foot_data = [d[2] for d in foot_data]
