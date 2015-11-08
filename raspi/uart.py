@@ -16,7 +16,7 @@ sys.stderr = CommonLogger(logger, logging.ERROR)
 class UartHandler(object):
 
     def __init__(self, logger, serial_line='/dev/ttyAMA0',
-                 baud_rate=9600, timeout=1):
+                 baud_rate=115200, timeout=1):
         self.ser = serial.Serial(serial_line, baud_rate, timeout=timeout)
         self.logger = logger
         self.db = DB(logger)
