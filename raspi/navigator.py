@@ -60,7 +60,7 @@ class Navigator(object):
         if prev_node_id:
             return self.graph[prev_node_id]
         else:
-            return None
+            return {'x': None, 'y': None}
 
     @property
     def prev_node_id(self):
@@ -180,17 +180,17 @@ class Navigator(object):
     def _wait_for_angle_turn(self, angle_to_turn):
         self.log.info("Waiting for turn by %d", angle_to_turn)
         timestamp = now()
-        back_data = self.db.fetch_data(sid=0, since=timestamp)
+        back_data = self.db.fetch_data(sid=1, since=timestamp)
         timestamp = back_data[-1][0]
         self.hc.clear_filter()
-        current_heading = self.hc.get_heading(back_data)
+        current_heading = self.hc.get_heading([d[2] for d in back_data])
         turned_angle = 0
         while abs(turned_angle - angle_to_turn) > ANGLE_THRESHOLD:
-            back_data = self.db.fetch_data(sid=0, since=timestamp)
+            back_data = self.db.fetch_data(sid=1, since=timestamp)
             timestamp = back_data[-1][0]
-            heading = self.hc.get_heading(back_data)
+            heading = self.hc.get_heading([d[2] for d in back_data])
             turned_angle = abs(current_heading - heading)
-            self.log.info("Turned angle: %d", turned_angle)
+            self.log.info("Turned angle: %d (%d - %d)", turned_angle, current_heading, heading)
         self.log.info("Completed turn")
 
     def _wait_for_steps(self, num_of_steps_to_wait):
@@ -198,13 +198,14 @@ class Navigator(object):
         counted_steps = 0
         timestamp = now()
         while counted_steps != num_of_steps_to_wait:
-            foot_data = self.db.fetch_data(sid=1, since=timestamp)
+            foot_data = self.db.fetch_data(sid=0, since=timestamp)
             timestamp = foot_data[-1][0]
-            for d in [d[2] for d in foot_data]:
+            foot_data = [d[2] for d in foot_data]
+            for d in foot_data:
                 is_step_detected = self.sc.detect_step(d)
                 if is_step_detected:
                     self.audio.prompt_step()
-                    counted_steps += 1
+                    counted_steps += 2
                     self.log.info("Counted steps: %d", counted_steps)
                 if counted_steps == num_of_steps_to_wait:
                     break
@@ -238,24 +239,31 @@ class Navigator(object):
         else:
             self.log.info('Navigating to node %s', self.next_node_id)
 
-    def _calc_angle_to_turn(x1, y1, x2, y2, x3, y3):
+    def _calc_angle_to_turn(self, x1, y1, x2, y2, x3, y3):
+        self.log.info([x1, y1, x2, y2, x3, y3])
         if x1 is None or y1 is None:
-            true_angle = self._calc_true_angle()
-            v_a = [(x1 - x2), (y1 - y2)]
+            true_angle = self._calc_true_angle(x2, y2, x3, y3)
+            v_a = [(x3 - x2), (y3 - y2)]
             v_b = [1, 0]
+            self.log.info(v_a)
+            self.log.info(v_b)
+            self.log.info(true_angle)
             angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
+            self.log.info(angle_to_turn_to)
             return angle_to_turn_to - true_angle
-        v_a = [(x1 - x2), (y1 - y2)]
-        v_b = [(x2 - x3), (y2, - y3)]
+        v_a = [(x2 - x1), (y2 - y1)]
+        v_b = [(x3 - x2), (y3 - y2)]
+        self.log.info(v_a)
+        self.log.info(v_b)
         return self._angle_bw_vectors(v_a, v_b)
 
     def _calc_true_angle(self, x1, y1, x2, y2):
-        back_data = self.db.fetch_data(sid=0, since=now())
+        back_data = self.db.fetch_data(sid=1, since=now())
         self.hc.clear_filter()
         self.hc.set_map_north(self.north)
-        return self.hc.get_heading(back_data, true_heading=True)
+        return self.hc.get_heading([d[2] for d in back_data])
 
-    def _angle_bw_vectors(v_a, v_b):
+    def _angle_bw_vectors(self, v_a, v_b):
         d = dot_product(v_a, v_b)
         mag_a = dot_product(v_a, v_a) ** 0.5
         mag_b = dot_product(v_b, v_b) ** 0.5

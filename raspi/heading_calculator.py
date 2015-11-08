@@ -29,7 +29,7 @@ class HeadingCalculator():
     def clear_filter(self):
         self.median_window = []
 
-    def get_heading(self, imu_data, true_heading=False):
+    def get_heading(self, imu_data):
         heading = None
         for data in imu_data:
             a = data[1:4]
@@ -39,8 +39,6 @@ class HeadingCalculator():
                 self._calculate_raw_heading(a, m, f))
         if not heading:
             return 0
-        if not true_heading:
-            return normalize_360(heading)
         return self._convert_heading_to_horizontal_axis(heading)
 
     def _transform_m(self, m):
