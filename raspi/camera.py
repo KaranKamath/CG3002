@@ -33,5 +33,6 @@ with picamera.PiCamera() as camera:
         camera.capture(rawCapture, format="bgr")
         img = rawCapture.array
         process_img(img)
+        rawCapture.truncate(0)
         time.sleep(1)
 
