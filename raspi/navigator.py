@@ -2,7 +2,7 @@
 import logging
 import sys
 import time
-from math import atan2, degrees, acos
+from math import atan2, degrees
 from collections import deque
 
 from db import DB
@@ -185,7 +185,7 @@ class Navigator(object):
         self.hc.clear_filter()
         current_heading = self.hc.get_heading([d[2] for d in back_data])
         turned_angle = 0
-        while abs(turned_angle - angle_to_turn) > ANGLE_THRESHOLD:
+        while abs(turned_angle - abs(angle_to_turn)) > ANGLE_THRESHOLD:
             back_data = self.db.fetch_data(sid=1, since=timestamp)
             timestamp = back_data[-1][0]
             heading = self.hc.get_heading([d[2] for d in back_data])
@@ -248,7 +248,6 @@ class Navigator(object):
             v_b = [1, 0]
             self.log.info(v_a)
             self.log.info(v_b)
-            self.log.info(true_angle)
             angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
             self.log.info(angle_to_turn_to)
             return angle_to_turn_to - true_angle
@@ -265,11 +264,9 @@ class Navigator(object):
         return self.hc.get_heading([d[2] for d in back_data])
 
     def _angle_bw_vectors(self, v_a, v_b):
-        d = dot_product(v_a, v_b)
-        mag_a = dot_product(v_a, v_a) ** 0.5
-        mag_b = dot_product(v_b, v_b) ** 0.5
-        cos_val = d / mag_a / mag_b
-        return normalize_360(degrees(acos(cos_val)))
+        angle_v_a = degrees(atan2(v_a[1], v_a[0]))
+        angle_v_b = degrees(atan2(v_b[1], v_b[0]))
+        return normalize_360(angle_v_b - angle_v_a)
 
     def _play_prompt(self, prompt, angle, dist):
         val = dist if prompt == PromptDirn.straight else angle
