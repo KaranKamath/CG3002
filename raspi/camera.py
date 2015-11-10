@@ -9,7 +9,7 @@ DIR_PATH = 'images/'
 RES_HEIGHT = 720
 RES_WIDTH = 1280
 counter = 1
-
+TIME_PERIOD = 1
 
 def detect_qr(image):
     # create a reader
@@ -67,4 +67,4 @@ with picamera.PiCamera() as camera:
         output = detect_qr(img)
         print output, counter
         rawCapture.truncate(0)
-        time.sleep(1)
+        time.sleep(TIME_PERIOD)
