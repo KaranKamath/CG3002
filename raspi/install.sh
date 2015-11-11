@@ -34,7 +34,6 @@ sudo rm -f /home/pi/logs/localizer.log.*
 # sudo insserv obsdet
 
 sudo rm -f /home/pi/db/uart.db*
-touch /home/pi/db/uart.db
 # sudo service tweet-ip start
 sudo service uart start
 sudo service navi start
