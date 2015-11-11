@@ -30,7 +30,7 @@ class Navigator(object):
     def __init__(self, logger):
         self.log = logger
         self.log.info('Starting navigator...')
-        self.db = DB(logger)
+        self.db = DB(logger=logger)
         self.maps = MapsRepo()
         self.audio = AudioDriver()
         self.sc = StepCounter(logger)
@@ -249,6 +249,7 @@ class Navigator(object):
             self.log.info(v_a)
             self.log.info(v_b)
             angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
+            self.log.info(true_angle)
             self.log.info(angle_to_turn_to)
             return angle_to_turn_to - true_angle
         v_a = [(x2 - x1), (y2 - y1)]

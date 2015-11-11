@@ -21,7 +21,7 @@ class Localizer(object):
     back_imu_timestamp = now()
 
     def __init__(self, logger):
-        self.db = DB(logger)
+        self.db = DB(logger=logger)
         self.sc = StepCounter(logger)
         self.hc = HeadingCalculator(logger)
         self.log = logger

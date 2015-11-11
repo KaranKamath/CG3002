@@ -24,7 +24,7 @@ class ObstacleDetector(object):
 
     def __init__(self, logger):
         self.past_vals = []
-        self.db = DB(logger)
+        self.db = DB(logger=logger)
         self.logger = logger
         self.motor_driver = MotorDriver()
         self.logger.info('Starting up obstacle detector...')
