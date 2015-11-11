@@ -60,8 +60,8 @@ class AudioDriver(object):
             self._play(args)
 
     def prompt_step(self):
-        self._play([PLAYER, STEP], async=False)
-        
+        self._play([PLAYER, STEP])
+
     def prompt_node_reached(self, node_id):
         args = [PLAYER, NODE_REACHED]
         for digit in str(int(node_id)):

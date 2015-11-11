@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import time
+import logging
 from utils import now
 
 
@@ -10,7 +11,7 @@ class DB(object):
     block_timeout = 0.1  # 100ms as data incoming at 10Hz
     timeout_log_offset = 20
 
-    def __init__(self, logger, db_name='/home/pi/db/uart.db'):
+    def __init__(self, db_name='uart.db', logger=logging.getLogger(__name__)):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
         self.db_name = db_name
@@ -174,8 +175,7 @@ class DB(object):
         self._close_conn()
 
 if __name__ == '__main__':
-    import logging
-    foo = DB(logging.getLogger(__name__), 'uart.db')
+    foo = DB(db_name='uart.db')
     foo.insert_location(0, 0, 0, 0, True)
     print foo.is_reset()
     time.sleep(0.1)
