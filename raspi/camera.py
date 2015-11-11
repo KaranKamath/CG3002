@@ -11,6 +11,7 @@ RES_WIDTH = 1280
 counter = 1
 TIME_PERIOD = 0.1
 
+
 def detect_qr(image):
     # create a reader
     scanner = zbar.ImageScanner()
@@ -22,7 +23,7 @@ def detect_qr(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
 
     cv2.imwrite(DIR_PATH + str(counter) + '-gray.jpg', gray)
-    
+
     pil = Image.fromarray(gray)
     width, height = pil.size
     raw = pil.tobytes()

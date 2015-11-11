@@ -1,8 +1,9 @@
-from math import sqrt, degrees, atan2, pi
+import logging
+from math import atan2, pi
 from scipy.signal import medfilt
 
 from vector_ops import dot_product, cross_3d, normalize_3d
-from utils import euclidean_dist, normalize_360
+from utils import normalize_360
 
 
 # M_BIAS = [-422.405, -405.466, -453.233]
@@ -18,7 +19,7 @@ M_TRANSFORMATION = [[9.578, -1.035, -3.597],
 
 class HeadingCalculator():
 
-    def __init__(self, logger):
+    def __init__(self, logger=logging.getLogger(__name__)):
         self.log = logger
         self.median_window = []
         self.map_north = 0
@@ -30,15 +31,15 @@ class HeadingCalculator():
         self.median_window = []
 
     def get_heading(self, imu_data):
-        heading = None
+        if not imu_data:
+            return 0
         for data in imu_data:
             a = data[1:4]
             m = data[4:7]
             f = [0, 0, 1]
             heading = self._filter_heading(
-                self._calculate_raw_heading(a, m, f))
-        if not heading:
-            return 0
+                self._calculate_raw_heading(a, m, f)
+            )
         return self._convert_heading_to_horizontal_axis(heading)
 
     def _transform_m(self, m):
@@ -68,6 +69,5 @@ class HeadingCalculator():
 
 
 if __name__ == '__main__':
-    import logging
-    obj = HeadingCalculator(logging.getLogger(__name__))
+    obj = HeadingCalculator()
     obj.get_heading([])

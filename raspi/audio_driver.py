@@ -78,7 +78,6 @@ class AudioDriver(object):
         self._play([PLAYER, BEGIN], async=False)
 
 if __name__ == '__main__':
-    from time import sleep
     obj = AudioDriver()
     obj.prompt(PromptDirn.left, 1.234)
     obj.prompt(PromptDirn.end)

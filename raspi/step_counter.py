@@ -1,4 +1,3 @@
-from math import sin, cos, radians
 import logging
 from enum import Enum
 
@@ -13,7 +12,7 @@ class StepCounterState(Enum):
 
 class StepCounter(object):
 
-    def __init__(self, logger):
+    def __init__(self, logger=logging.getLogger(__name__)):
         self.log = logger
         self.state = StepCounterState.non_peak
 
@@ -32,12 +31,11 @@ class StepCounter(object):
 if __name__ == "__main__":
     from db import DB
     from utils import now
-    f = DB(logging.getLogger(__name__))
-    j = StepCounter(logging.getLogger(__name__))
+    db = DB(db_name='uart.db')
+    obj = StepCounter()
     timestamp = now()
     while True:
-        data = f.fetch_data(sid=0, since=timestamp)
-        print "got data"
+        data = db.fetch_data(sid=0, since=timestamp)
         timestamp = data[-1][0]
         for d in data:
-            print j.detect_step(d[2], 0)
+            print obj.detect_step(d[2])

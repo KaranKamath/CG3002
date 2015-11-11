@@ -1,7 +1,7 @@
 import time
 import argparse
 import logging as log
-from math import sqrt
+from math import sqrt, atan2, degrees
 from logging.handlers import TimedRotatingFileHandler
 from Queue import PriorityQueue
 
@@ -45,6 +45,12 @@ def normalize_360(heading):
     while heading < -180:
         heading += 360
     return heading
+
+
+def angle_bw_vectors(v_a, v_b):
+    angle_v_a = degrees(atan2(v_a[1], v_a[0]))
+    angle_v_b = degrees(atan2(v_b[1], v_b[0]))
+    return normalize_360(angle_v_b - angle_v_a)
 
 
 def dijkstra(graph, source, target):

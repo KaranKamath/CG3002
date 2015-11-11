@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import logging
 import sys
-import time
-from math import atan2, degrees
 from collections import deque
 
 from db import DB
@@ -11,9 +9,8 @@ from prompts_enum import PromptDirn
 from audio_driver import AudioDriver
 from step_counter import StepCounter
 from heading_calculator import HeadingCalculator
-from vector_ops import dot_product
-from utils import CommonLogger, dijkstra, euclidean_dist, init_logger,\
-    normalize_360, now
+import utils
+from utils import CommonLogger, init_logger
 
 
 LOG_FILENAME = '/home/pi/logs/navi.log'
@@ -22,7 +19,9 @@ sys.stdout = CommonLogger(logger, logging.INFO)
 sys.stderr = CommonLogger(logger, logging.ERROR)
 
 STEP_LENGTH = 40.0
-ANGLE_THRESHOLD = 15
+ANGLE_THRESHOLD = 10
+FOOT_SENSOR_ID = 0
+BACK_SENSOR_ID = 1
 
 
 class Navigator(object):
@@ -30,13 +29,14 @@ class Navigator(object):
     def __init__(self, logger):
         self.log = logger
         self.log.info('Starting navigator...')
-        self.db = DB(logger=logger)
+        self.db = DB(logger=logger, db_name='uart.db')
         self.maps = MapsRepo()
         self.audio = AudioDriver()
         self.sc = StepCounter(logger)
         self.hc = HeadingCalculator(logger)
         self.current_prompt = None
-        self.navigation_finished = False
+        self.navi_chunk_finished = False
+        self.heading_timestamp = utils.now()
 
     @property
     def next_node(self):
@@ -69,6 +69,15 @@ class Navigator(object):
         else:
             return None
 
+    def _get_user_heading(self, timestamp=None):
+        if timestamp is None:
+            timestamp = self.heading_timestamp
+        self.hc.clear_filter()
+        self.hc.set_map_north(self.north)
+        data = self.db.fetch_data(sid=BACK_SENSOR_ID, since=timestamp)
+        self.heading_timestamp = data[-1][0]
+        return self.hc.get_heading([d[2] for d in data])
+
     def _wait_for_origin_and_destination(self):
         self.log.info('Waiting for origin and destination...')
         data = self.db.fetch_origin_and_destination()
@@ -82,38 +91,18 @@ class Navigator(object):
         if self.o_bldg != self.d_bldg or self.o_level != self.d_level:
             self.log.info('Creating multiple navi chunks')
             maps_to_visit = self._find_maps_to_visit()
-            self.log.info('Will visit maps: ' + str(maps_to_visit))
-            self.navi_chunks = []
-            navi_chunk = [(self.o_bldg, self.o_level, self.o_node)]
-            for i in range(len(maps_to_visit[:-1])):
-                curr_bldg, curr_lvl = maps_to_visit[i]
-                n_bldg, n_lvl = maps_to_visit[i + 1]
-                conns = self.maps.connectors(curr_bldg, curr_lvl)
-                n_conns = self.maps.connectors(n_bldg, n_lvl)
-                navi_chunk.append((curr_bldg, curr_lvl, conns[n_bldg][n_lvl]))
-                self.navi_chunks.append(navi_chunk)
-                navi_chunk = [(n_bldg, n_lvl, n_conns[curr_bldg][curr_lvl])]
-            dst_map_conns = self.maps.connectors(self.d_bldg, self.d_level)
-            last_dst = self.navi_chunks[-1][-1]
-            dst_map_start_node = dst_map_conns[last_dst[0]][last_dst[1]]
-            self.navi_chunks.append([
-                (self.d_bldg, self.d_level, dst_map_start_node),
-                (self.d_bldg, self.d_level, self.d_node)
-            ])
-            self.log.info("Generated chunks: " + str(self.navi_chunks))
+            self.navi_chunks = self._generate_multiple_chunks(maps_to_visit)
         else:
             self.log.info('Creating single navi chunk')
-            self.navi_chunks = [(
-                (self.o_bldg, self.o_level, self.o_node),
-                (self.d_bldg, self.d_level, self.d_node)
-            )]
+            self.navi_chunks = [((self.o_bldg, self.o_level, self.o_node),
+                                 (self.d_bldg, self.d_level, self.d_node))]
+        self.log.info("Generated chunk(s): " + str(self.navi_chunks))
 
     def _find_maps_to_visit(self):
         dist = {(self.o_bldg, self.o_level): 0}
         parent = {}
         to_visit = deque()
         to_visit.append((self.o_bldg, self.o_level))
-        ended = False
         while len(to_visit) != 0:
             bldg, level = to_visit.popleft()
             if (bldg, level) == (self.d_bldg, self.d_level):
@@ -133,7 +122,29 @@ class Navigator(object):
         while curr != (self.o_bldg, self.o_level):
             curr = parent[curr]
             maps_to_visit.append(curr)
-        return maps_to_visit[::-1]
+        maps_to_visit = maps_to_visit[::-1]
+        self.log.info('Will visit maps: ' + str(maps_to_visit))
+        return maps_to_visit
+
+    def _generate_multiple_chunks(self, maps_to_visit):
+        navi_chunks = []
+        navi_chunk = [(self.o_bldg, self.o_level, self.o_node)]
+
+        for i in range(len(maps_to_visit[:-1])):
+            curr_bldg, curr_lvl = maps_to_visit[i]
+            n_bldg, n_lvl = maps_to_visit[i + 1]
+            conns = self.maps.connectors(curr_bldg, curr_lvl)
+            n_conns = self.maps.connectors(n_bldg, n_lvl)
+            navi_chunk.append((curr_bldg, curr_lvl, conns[n_bldg][n_lvl]))
+            navi_chunks.append(navi_chunk)
+            navi_chunk = [(n_bldg, n_lvl, n_conns[curr_bldg][curr_lvl])]
+
+        dst_map_conns = self.maps.connectors(self.d_bldg, self.d_level)
+        last_dst = navi_chunks[-1][-1]
+        dst_map_start_node = dst_map_conns[last_dst[0]][last_dst[1]]
+        navi_chunks.append([(self.d_bldg, self.d_level, dst_map_start_node),
+                            (self.d_bldg, self.d_level, self.d_node)])
+        return navi_chunks
 
     def _prepare_for_next_navi_chunk(self):
         current_chunk = self.navi_chunks[0]
@@ -141,7 +152,7 @@ class Navigator(object):
         self.level = current_chunk[0][1]
         self.origin = current_chunk[0][2]
         self.destination = current_chunk[1][2]
-        self.navigation_finished = False
+        self.navi_chunk_finished = False
         self.log.info("Switching to %s-%s", self.building, self.level)
         self.log.info("Endpoints %s-%s", self.origin, self.destination)
 
@@ -154,131 +165,106 @@ class Navigator(object):
 
     def _generate_path(self):
         self.log.info('Generating path...')
-        self.path = dijkstra(self.graph, self.origin, self.destination)
-        self.log.info('Got path: %s', str(self.path))
+        self.path = utils.dijkstra(self.graph, self.origin, self.destination)
         self.next_node_idx = 1
+        self.log.info('Got path: %s', str(self.path))
 
-    def _align_to_next_node(self, num_of_steps_to_next_node):
+    def _wait_for_chunk_to_finish(self):
+        while not self.navi_chunk_finished:
+            self._navigate_to_next_node()
+
+    def _navigate_to_next_node(self):
+        self._align_to_next_node()
+        self._wait_for_steps_to_next_node()
+        self._node_reached()
+
+    def _align_to_next_node(self):
         self.log.info("Aligning...")
         angle_to_turn = self._calc_angle_to_turn(
             self.prev_node['x'], self.prev_node['y'],
             self.current_node['x'], self.current_node['y'],
             self.next_node['x'], self.next_node['y']
         )
-        # straight ahead
         if angle_to_turn == 0:
-            self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
-            return
-        # turn needed
-        if angle_to_turn > 0:
-            self.audio.prompt(PromptDirn.left, angle_to_turn)
+            self.log.info("No alignment needed")
         else:
-            self.audio.prompt(PromptDirn.right, angle_to_turn)
-        self._wait_for_angle_turn(angle_to_turn)
-        self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
+            if angle_to_turn > 0:
+                self.log.info("Left turn by %d", angle_to_turn)
+                self.audio.prompt(PromptDirn.left, angle_to_turn)
+            else:
+                self.log.info("Right turn by %d", angle_to_turn)
+                self.audio.prompt(PromptDirn.right, angle_to_turn)
+            self._wait_for_angle_turn(angle_to_turn)
+
+    def _calc_angle_to_turn(self, x1, y1, x2, y2, x3, y3):
+        if x1 is None or y1 is None:  # No prev node (initial alignment)
+            v_a = [1, 0]
+            v_b = [(x3 - x2), (y3 - y2)]
+            node_heading = utils.angle_bw_vectors(v_a, v_b)
+            user_heading = self._get_user_heading(timestamp=utils.now())
+            return utils.normalize_360(node_heading - user_heading)
+        else:
+            v_a = [(x2 - x1), (y2 - y1)]
+            v_b = [(x3 - x2), (y3 - y2)]
+            return utils.angle_bw_vectors(v_a, v_b)
 
     def _wait_for_angle_turn(self, angle_to_turn):
-        self.log.info("Waiting for turn by %d", angle_to_turn)
-        timestamp = now()
-        back_data = self.db.fetch_data(sid=1, since=timestamp)
-        timestamp = back_data[-1][0]
-        self.hc.clear_filter()
-        current_heading = self.hc.get_heading([d[2] for d in back_data])
-        turned_angle = 0
-        while abs(turned_angle - abs(angle_to_turn)) > ANGLE_THRESHOLD:
-            back_data = self.db.fetch_data(sid=1, since=timestamp)
-            timestamp = back_data[-1][0]
-            heading = self.hc.get_heading([d[2] for d in back_data])
-            turned_angle = abs(current_heading - heading)
-            self.log.info("Angle: %d (%d - %d)", turned_angle,
-                          current_heading, heading)
-        self.log.info("Completed turn")
+        self.log.info("Waiting for turn...")
 
-    def _wait_for_steps(self, num_of_steps_to_wait):
-        self.log.info("Waiting for %d steps", num_of_steps_to_wait)
-        counted_steps = 0
-        timestamp = now()
-        while counted_steps < num_of_steps_to_wait:
-            foot_data = self.db.fetch_data(sid=0, since=timestamp)
-            timestamp = foot_data[-1][0]
-            foot_data = [d[2] for d in foot_data]
-            for d in foot_data:
-                is_step_detected = self.sc.detect_step(d)
-                if is_step_detected:
-                    self.audio.prompt_step()
-                    counted_steps += 2
-                    self.log.info("Counted steps: %d", counted_steps)
-                if counted_steps == num_of_steps_to_wait:
-                    break
-        self.log.info("Completed steps")
+        initial_heading = self._get_user_heading(timestamp=utils.now())
+        self.log.info("Initial heading: %d", initial_heading)
+
+        turned_angle = 0
+        while abs(turned_angle - angle_to_turn) > ANGLE_THRESHOLD:
+            user_heading = self._get_user_heading()
+            turned_angle = user_heading - initial_heading
+            self.log.info("Angle turned: %d (= %d - %d)", turned_angle,
+                          initial_heading, user_heading)
+        self.log.info("Turn complete")
+
+    def _wait_for_steps_to_next_node(self):
+        num_of_steps_to_next_node = self._calc_num_steps_to_next_node()
+        self.audio.prompt(PromptDirn.straight, num_of_steps_to_next_node)
+        self._wait_for_steps(num_of_steps_to_next_node)
 
     def _calc_num_steps_to_next_node(self):
-        distance = euclidean_dist(
+        dist = utils.euclidean_dist(
             self.current_node['x'], self.current_node['y'],
             self.next_node['x'], self.next_node['y']
         )
-        num_of_steps_to_next_node = int(round(distance / STEP_LENGTH))
-        self.log.info("Steps to walk: " + str(num_of_steps_to_next_node))
+        num_of_steps_to_next_node = int(round(dist / STEP_LENGTH))
+        self.log.info("%d steps to next node", num_of_steps_to_next_node)
         return num_of_steps_to_next_node
 
-    def _navigate_to_next_node(self):
-        num_of_steps_to_next_node = self._calc_num_steps_to_next_node()
-        self._align_to_next_node(num_of_steps_to_next_node)
-        self._wait_for_steps(num_of_steps_to_next_node)
-        self._node_reached()
+    def _wait_for_steps(self, num_of_steps_to_wait):
+        self.log.info("Waiting for steps...")
+        counted_steps = 0
+        timestamp = utils.now()
+        while counted_steps < num_of_steps_to_wait:
+            data = self.db.fetch_data(sid=FOOT_SENSOR_ID, since=timestamp)
+            timestamp = data[-1][0]
+            for data_pt in [x[2] for x in data]:
+                if self.sc.detect_step(data_pt):
+                    counted_steps += 2
+                    self.log.info("Counted steps: %d", counted_steps)
+                    self.audio.prompt_step()
+                if counted_steps >= num_of_steps_to_wait:
+                    break
+        self.log.info("Completed steps")
 
     def _node_reached(self):
-        self.audio.prompt_node_reached(self.next_node_id)
         self.current_prompt = None
+        self.audio.prompt_node_reached(self.next_node_id)
         self.log.info('Reached node %s', self.next_node_id)
-        if self.current_node['name'] == 'Stairwell':
+        if self.next_node['name'] == 'Stairwell':
             self.audio.prompt_stairs()
         self.next_node_idx += 1
         if self.next_node_idx == len(self.path):
+            self.navi_chunk_finished = True
             self.log.info('Reached destination node')
-            self.stop()
         else:
-            self.log.info('Navigating to node %s', self.next_node_id)
-
-    def _calc_angle_to_turn(self, x1, y1, x2, y2, x3, y3):
-        self.log.info([x1, y1, x2, y2, x3, y3])
-        if x1 is None or y1 is None:
-            true_angle = self._calc_true_angle(x2, y2, x3, y3)
-            v_b = [(x3 - x2), (y3 - y2)]
-            v_a = [1, 0]
-            self.log.info(v_a)
-            self.log.info(v_b)
-            angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
-            self.log.info(true_angle)
-            self.log.info(angle_to_turn_to)
-            return angle_to_turn_to - true_angle
-        v_a = [(x2 - x1), (y2 - y1)]
-        v_b = [(x3 - x2), (y3 - y2)]
-        self.log.info(v_a)
-        self.log.info(v_b)
-        return self._angle_bw_vectors(v_a, v_b)
-
-    def _calc_true_angle(self, x1, y1, x2, y2):
-        back_data = self.db.fetch_data(sid=1, since=now())
-        self.hc.clear_filter()
-        self.hc.set_map_north(self.north)
-        return self.hc.get_heading([d[2] for d in back_data])
-
-    def _angle_bw_vectors(self, v_a, v_b):
-        angle_v_a = degrees(atan2(v_a[1], v_a[0]))
-        angle_v_b = degrees(atan2(v_b[1], v_b[0]))
-        return normalize_360(angle_v_b - angle_v_a)
-
-    def _play_prompt(self, prompt, angle, dist):
-        val = dist if prompt == PromptDirn.straight else angle
-        if self.current_prompt is None or self.current_prompt != prompt:
-            self.audio.prompt(prompt, val)
-            self.audio_offset = 0
-        elif prompt == PromptDirn.left or prompt == PromptDirn.right:
-            self.audio_offset += 1
-        if self.audio_offset == self.audio_delay:
-            self.audio_offset = 0
-            self.audio.prompt(prompt, val)
+            self.log.info('Navigating to node #%d %s',
+                          self.next_node_id, self.next_node['name'])
 
     def start(self):
         self._wait_for_origin_and_destination()
@@ -287,13 +273,9 @@ class Navigator(object):
             self._prepare_for_next_navi_chunk()
             self._get_map()
             self._generate_path()
-            while not self.navigation_finished:
-                self._navigate_to_next_node()
+            self._wait_for_chunk_to_finish()
             self.navi_chunks.pop(0)
         self.audio.prompt(PromptDirn.end)
-
-    def stop(self):
-        self.navigation_finished = True
 
 
 nav = Navigator(logger)
