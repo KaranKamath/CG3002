@@ -11,7 +11,8 @@ class DB(object):
     block_timeout = 0.1  # 100ms as data incoming at 10Hz
     timeout_log_offset = 20
 
-    def __init__(self, db_name='uart.db', logger=logging.getLogger(__name__)):
+    def __init__(self, db_name='/home/pi/db/uart.db',
+                 logger=logging.getLogger(__name__)):
         if db_name.rfind('.db') == -1:
             db_name += '.db'
         self.db_name = db_name

@@ -244,8 +244,8 @@ class Navigator(object):
         self.log.info([x1, y1, x2, y2, x3, y3])
         if x1 is None or y1 is None:
             true_angle = self._calc_true_angle(x2, y2, x3, y3)
-            v_a = [(x3 - x2), (y3 - y2)]
-            v_b = [1, 0]
+            v_b = [(x3 - x2), (y3 - y2)]
+            v_a = [1, 0]
             self.log.info(v_a)
             self.log.info(v_b)
             angle_to_turn_to = self._angle_bw_vectors(v_a, v_b)
