@@ -17,8 +17,13 @@ def grouper(n, iterable, fillvalue=None):
 def decode(data):
     data = list(str(data))
     data.insert(-2, 0)
-    split_data = [ int(''.join([str(x) for x in list(v)])) for v in grouper(3, data) ]
-    
+    data = data[:-1]
+
+    try:
+        split_data = [ int(''.join([str(x) for x in list(v)])) for v in grouper(3, data) ]
+    except Exception:
+        return None    
+
     if len(set(split_data)) == 1:
         return split_data[0]
 
