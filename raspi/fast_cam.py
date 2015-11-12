@@ -4,13 +4,15 @@ import threading
 import picamera
 import uuid
 import cv2
+import numpy as np
 
 # Create a pool of image processors
 done = False
 lock = threading.Lock()
 pool = []
-DIR_PATH = 'images/'
-COUNTER = 0
+DIR_PATH = '/home/pi/cg3002/images/'
+RES_WIDTH = 1280
+RES_HEIGHT = 720
 
 class ImageProcessor(threading.Thread):
     def __init__(self):
@@ -27,9 +29,9 @@ class ImageProcessor(threading.Thread):
             # Wait for an image to be written to the stream
             if self.event.wait(1):
                 try:
-                    global COUNTER
                     self.stream.seek(0)
-                    img = cv2.imread(self.stream)
+                    np_arr = np.fromstring(self.stream.read(), np.uint8)
+                    img = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
                     cv2.imwrite(DIR_PATH + 'image-' + str(uuid.uuid4()) + '.jpg', img)
                     # Read the image and do some processing on it
                     #Image.open(self.stream)
@@ -63,8 +65,8 @@ def streams():
 
 with picamera.PiCamera() as camera:
     pool = [ImageProcessor() for i in range(4)]
-    camera.resolution = (640, 480)
-    camera.framerate = 30
+    camera.resolution = (RES_WIDTH, RES_HEIGHT)
+    camera.framerate = 10
     camera.start_preview()
     time.sleep(2)
     camera.capture_sequence(streams(), use_video_port=True)
