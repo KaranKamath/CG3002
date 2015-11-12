@@ -2,12 +2,10 @@ import io
 import time
 import threading
 import picamera
-import uuid
 import cv2
 import numpy as np
 import zbar
 from PIL import Image
-from picamera.array import PiRGBArray
 
 # Create a pool of image processors
 done = False
@@ -17,13 +15,15 @@ DIR_PATH = '/home/pi/cg3002/images/'
 RES_WIDTH = 800
 RES_HEIGHT = 600
 
+
 def detect_qr(image):
     # create a reader
     scanner = zbar.ImageScanner()
 
     # configure the reader
-    scanner.parse_config('enable')
-    #scanner.parse_config('upca.enable')
+    scanner.parse_config('disable')
+    scanner.parse_config('upca.enable')
+    scanner.parse_config('epn13.enable')
 
     # obtain image data
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
@@ -41,10 +41,13 @@ def detect_qr(image):
     # extract results
     for symbol in image:
         # do something useful with results
+        print symbol.type
+        print symbol.quality
         return symbol.data
 
 
 class ImageProcessor(threading.Thread):
+
     def __init__(self):
         super(ImageProcessor, self).__init__()
         self.stream = io.BytesIO()
@@ -65,7 +68,7 @@ class ImageProcessor(threading.Thread):
                     qrData = detect_qr(img)
                     print qrData
 
-                    #done=True
+                    # done=True
                 finally:
                     # Reset the stream and event
                     self.stream.seek(0)
@@ -74,6 +77,7 @@ class ImageProcessor(threading.Thread):
                     # Return ourselves to the pool
                     with lock:
                         pool.append(self)
+
 
 def streams():
     while not done:
@@ -90,7 +94,7 @@ def streams():
             time.sleep(0.1)
 
 with picamera.PiCamera() as camera:
-    pool = [ImageProcessor() for i in range(4)]
+    pool = [ImageProcessor() for i in range(2)]
     camera.resolution = (RES_WIDTH, RES_HEIGHT)
     camera.framerate = 5
     camera.start_preview()
