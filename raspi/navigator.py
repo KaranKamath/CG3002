@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-import io
+
 import logging
 import sys
-import time
+import signal
+import functools
+
 from collections import deque
 from multiprocessing import Process, Queue
 
-
-import picamera
-import zbar
-from PIL import Image
 
 from db import DB
 from maps_repo import MapsRepo
@@ -17,6 +15,7 @@ from prompts_enum import PromptDirn
 from audio_driver import AudioDriver
 from step_counter import StepCounter
 from heading_calculator import HeadingCalculator
+from camera import camera
 import utils
 from utils import CommonLogger, init_logger
 
@@ -30,36 +29,7 @@ STEP_LENGTH = 40.0
 ANGLE_THRESHOLD = 10
 FOOT_SENSOR_ID = 0
 BACK_SENSOR_ID = 1
-CAM_RES_WIDTH = 800
-CAM_RES_HEIGHT = 600
-
-
 QUEUE = Queue()
-
-
-def camera(queue):
-    scanner = zbar.ImageScanner()
-    scanner.parse_config('disable')
-    scanner.parse_config('upca.enable')
-    # scanner.parse_config('ean13.enable')
-
-    with picamera.PiCamera() as camera:
-        camera.resolution = (CAM_RES_WIDTH, CAM_RES_HEIGHT)
-        camera.framerate = 2
-        camera.start_preview()
-        time.sleep(2)
-        stream = io.BytesIO()
-        for x in camera.capture_continuous(stream, format="jpeg",
-                                           use_video_port=True):
-            stream.seek(0)
-            image = Image.open(stream).convert('L')
-            z_image = zbar.Image(image.size[0], image.size[1],
-                                 'Y800', image.tobytes())
-            scanner.scan(z_image)
-            for symbol in z_image:
-                print symbol.data
-            stream.seek(0)
-            stream.truncate()
 
 
 class Navigator(object):
@@ -318,5 +288,11 @@ class Navigator(object):
         self.audio.prompt(PromptDirn.end)
 
 
+def cleanup(nav, signum, frame):
+    if nav.cam.is_alive():
+        nav.cam.terminate()
+
 nav = Navigator(logger)
+handler = functools.partial(cleanup, nav)
+signal.signal(signal.SIGTERM, handler)
 nav.start()

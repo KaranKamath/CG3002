@@ -5,12 +5,12 @@ echo "Installing..."
 # sudo chmod +x /etc/init.d/tweet-ip
 # sudo insserv tweet-ip
 
-# sudo service uart stop
-# sudo truncate -s 0 /home/pi/logs/uart.log
-# sudo rm -f /home/pi/logs/uart.log.*
-# sudo cp services/uart-service.sh /etc/init.d/uart
-# sudo chmod +x /etc/init.d/uart
-# sudo insserv uart
+sudo service uart stop
+sudo truncate -s 0 /home/pi/logs/uart.log
+sudo rm -f /home/pi/logs/uart.log.*
+sudo cp services/uart-service.sh /etc/init.d/uart
+sudo chmod +x /etc/init.d/uart
+sudo insserv uart
 
 sudo service navi stop
 sudo truncate -s 0 /home/pi/logs/navi.log
@@ -22,7 +22,7 @@ sudo insserv navi
 
 sudo rm -f /home/pi/db/uart.db*
 # sudo service tweet-ip start
-sudo service uart restart
+sudo service uart start
 sudo service navi start
 
 # cron_cmd='@reboot rm -f /home/pi/.ip /home/pi/logs/* /home/pi/db/*'
