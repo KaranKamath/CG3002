@@ -5,14 +5,44 @@ import picamera
 import uuid
 import cv2
 import numpy as np
+import zbar
+from PIL import Image
+from picamera.array import PiRGBArray
 
 # Create a pool of image processors
 done = False
 lock = threading.Lock()
 pool = []
 DIR_PATH = '/home/pi/cg3002/images/'
-RES_WIDTH = 1280
-RES_HEIGHT = 720
+RES_WIDTH = 800
+RES_HEIGHT = 600
+
+def detect_qr(image):
+    # create a reader
+    scanner = zbar.ImageScanner()
+
+    # configure the reader
+    scanner.parse_config('enable')
+    #scanner.parse_config('upca.enable')
+
+    # obtain image data
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
+
+    pil = Image.fromarray(gray)
+    width, height = pil.size
+    raw = pil.tobytes()
+
+    # wrap image data
+    image = zbar.Image(width, height, 'Y800', raw)
+
+    # scan the image for barcodes
+    scanner.scan(image)
+
+    # extract results
+    for symbol in image:
+        # do something useful with results
+        return symbol.data
+
 
 class ImageProcessor(threading.Thread):
     def __init__(self):
@@ -32,13 +62,9 @@ class ImageProcessor(threading.Thread):
                     self.stream.seek(0)
                     np_arr = np.fromstring(self.stream.read(), np.uint8)
                     img = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
-                    cv2.imwrite(DIR_PATH + 'image-' + str(uuid.uuid4()) + '.jpg', img)
-                    # Read the image and do some processing on it
-                    #Image.open(self.stream)
-                    #...
-                    #...
-                    # Set done to True if you want the script to terminate
-                    # at some point
+                    qrData = detect_qr(img)
+                    print qrData
+
                     #done=True
                 finally:
                     # Reset the stream and event
@@ -66,7 +92,7 @@ def streams():
 with picamera.PiCamera() as camera:
     pool = [ImageProcessor() for i in range(4)]
     camera.resolution = (RES_WIDTH, RES_HEIGHT)
-    camera.framerate = 10
+    camera.framerate = 5
     camera.start_preview()
     time.sleep(2)
     camera.capture_sequence(streams(), use_video_port=True)
