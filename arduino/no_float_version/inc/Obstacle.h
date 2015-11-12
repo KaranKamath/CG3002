@@ -19,20 +19,17 @@
 #define TRIGGER_STICK 7
 #define ECHO_STICK 6
 
-#define MAX_DISTANCE 300
+#define MAX_DISTANCE 100
 
 #define ITERATIONS 3
 #define MAX_PWM_VOLTAGE 127
 #define IR_STICK 15
 #define IR_FRONT 14
-#define DELAY_DISTANCE 200
+#define DELAY_DISTANCE 100
 
 void setupObstacle(void);
-void ultrasound(NewPing sonar_right, NewPing sonar_left, NewPing sonar_stick, data_t* dataRead);
-void infrared(data_t* dataRead);
 void readDistanceSensors(void *p);
 
-//Test
 void driveActuators(byte id, float dist);
 
 

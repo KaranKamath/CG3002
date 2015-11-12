@@ -6,12 +6,10 @@
  */ 
 
 #include "ImuFunctions.h"
-#include "debugging.h"
+#include "UartComm.h"
 #include "global.h"
 
-
 void imu(void *p) {
-	Serial.println("IMU task");
 	data_t data_down;
 	data_t data_up;
 	data_down.id = IDDOWN;
@@ -25,8 +23,6 @@ void imu(void *p) {
 	LPS ps_up;
 	LSM303 accma_up;
 	
-	char toSend[100];
-	
 	gyro_down = gyro_init(L3G::sa0_high);
 	ps_down = altitude_init(LPS::sa0_high);
 	accma_down = accemagno_init(LSM303::sa0_high);
@@ -34,7 +30,6 @@ void imu(void *p) {
 	gyro_up = gyro_init(L3G::sa0_low);
 	ps_up = altitude_init(LPS::sa0_low);
 	accma_up = accemagno_init(LSM303::sa0_low);
-	
 	
 	while (1) {	
 		altitude(ps_down, &data_down);
@@ -45,32 +40,11 @@ void imu(void *p) {
 		gyroreader(gyro_up, &data_up);
 		accemagno(accma_up, &data_up);
 		
-		createString(toSend,&data_down);
+		sendData(data_down);
+		sendData(data_up);
 
-		Serial.print(toSend);		
-		Serial1.write(toSend);
-
-		createString(toSend,&data_up);
-		
-		Serial.print(toSend);
-		Serial1.write(toSend);
-				
-		//xQueueSendToBack(report, &data_down, 500);
-		//xQueueSendToBack(report, &data_up, 500);
-		//to test if the queue is full
-		//xQueueSendToBack(report, &dataRead, portMAX_DELAY);
 		vTaskDelay(DELAY_IMU);
 	}
-}
-
-void createString(char *toSend, data_t *received){
-	
-	snprintf(toSend, sizeof(*toSend), "%d|%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", received->id,
-	received->data[0],
-	received->data[0+OFFSETAM], received->data[1+OFFSETAM], received->data[2+OFFSETAM],
-	received->data[3+OFFSETAM], received->data[4+OFFSETAM], received->data[5+OFFSETAM],
-	received->data[0+OFFSETGY], received->data[1+OFFSETGY], received->data[2+OFFSETGY]);
-	
 }
 
 void altitude(LPS ps, data_t *psData) {

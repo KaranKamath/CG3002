@@ -64,8 +64,8 @@ void readKeypad(Keypad keypad) {
 			}
 		}	
 	}
+	
 	Serial.println(keydata);
-	Serial1.write(keydata);
 	strcpy(ack, "   ");
 	while (strcmp(ack, "ACK") != 0) {
 		Serial1.write(keydata);

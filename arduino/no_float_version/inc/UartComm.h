@@ -11,9 +11,8 @@
 
 #include "global.h"
 
-extern xQueueHandle report;
 void setupUart();
 void handshake(void);
-void sendData(void *p);
+void sendData(data_t received);
 
 #endif /* UARTCOMM_H_ */

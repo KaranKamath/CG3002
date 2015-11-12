@@ -18,17 +18,14 @@
 #include "Wire.h"
 #include "queue.h"
 
-#define QUEUE_SIZE 5
 #define MAX_NUM_DATA 10
-#define DELAY_IMU 100
+#define DELAY_IMU 200
 
 #define IDDOWN 0
 #define IDUP 1
-#define IDOBSTACLE 1
+#define IDOBSTACLE 2
 #define OFFSETAM 1
 #define OFFSETGY 7
-
-#define LED_PIN 38
 
 typedef struct {
 	byte id;
