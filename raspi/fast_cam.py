@@ -23,7 +23,7 @@ def detect_qr(image):
     # configure the reader
     scanner.parse_config('disable')
     scanner.parse_config('upca.enable')
-    scanner.parse_config('epn13.enable')
+    scanner.parse_config('ean13.enable')
 
     # obtain image data
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
@@ -96,7 +96,7 @@ def streams():
 with picamera.PiCamera() as camera:
     pool = [ImageProcessor() for i in range(2)]
     camera.resolution = (RES_WIDTH, RES_HEIGHT)
-    camera.framerate = 5
+    camera.framerate = 2
     camera.start_preview()
     time.sleep(2)
     camera.capture_sequence(streams(), use_video_port=True)

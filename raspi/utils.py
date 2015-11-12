@@ -16,6 +16,10 @@ class CommonLogger(object):
         if message.rstrip() != '':
             self.logger.log(self.level, message.rstrip())
 
+    def flush(self):
+        for h in self.logger.handlers:
+            h.flush()
+
 
 def init_logger(logger, logfile):
     p = argparse.ArgumentParser()

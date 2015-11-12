@@ -15,9 +15,10 @@ TIME_PERIOD = 0.1
 def detect_qr(image):
     # create a reader
     scanner = zbar.ImageScanner()
-
+    scanner.parse_config('disable')
+    scanner.parse_config('upca.enable')
     # configure the reader
-    scanner.parse_config('enable')
+    # scanner.parse_config('enable')
 
     # obtain image data
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
@@ -48,7 +49,7 @@ def process_img(img):
     # canny = cv2.Canny(blur, 33, 100)
 
     # cv2.imwrite(DIR_PATH + str(counter) + '-blurred.jpg', blur)
-    cv2.imwrite(DIR_PATH + str(counter) + '-original.jpg', img)
+    # cv2.imwrite(DIR_PATH + str(counter) + '-original.jpg', img)
     # cv2.imwrite(DIR_PATH + str(counter) + '-canny.jpg', canny)
 
     counter += 1
