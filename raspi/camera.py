@@ -4,10 +4,25 @@ import time
 import picamera
 import zbar
 from PIL import Image
+from itertools import izip_longest
 
 CAM_RES_WIDTH = 800
 CAM_RES_HEIGHT = 600
 
+def grouper(n, iterable, fillvalue=None):
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return izip_longest(*args, fillvalue=fillvalue)
+
+def decode(data):
+    data = list(str(data))
+    data.insert(-2, 0)
+    split_data = [ int(''.join([str(x) for x in list(v)])) for v in grouper(3, data) ]
+    
+    if len(set(split_data)) == 1:
+        return split_data[0]
+
+    return None
 
 def camera(queue):
     scanner = zbar.ImageScanner()
@@ -31,5 +46,6 @@ def camera(queue):
             scanner.scan(z_image)
             for symbol in z_image:
                 print symbol.data, symbol.type
+                print 'Decoded: ', decode(symbol.data)
             stream.seek(0)
             stream.truncate()
