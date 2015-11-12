@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import logging
+import os
 import sys
 import signal
+import logging
 import functools
 
 from collections import deque
 from multiprocessing import Process, Queue
-
+# import RPi.GPIO as GPIO
 
 from db import DB
 from maps_repo import MapsRepo
@@ -29,6 +30,7 @@ STEP_LENGTH = 40.0
 ANGLE_THRESHOLD = 10
 FOOT_SENSOR_ID = 0
 BACK_SENSOR_ID = 1
+GPIO_OVERRIDE_PIN = 16
 QUEUE = Queue()
 
 
@@ -42,10 +44,14 @@ class Navigator(object):
         self.audio = AudioDriver()
         self.sc = StepCounter(logger)
         self.hc = HeadingCalculator(logger)
-        self.cam = Process(target=camera, args=(QUEUE,))
+        self.cam = Process(target=camera, name="Camera", args=(QUEUE,))
         self.current_prompt = None
         self.navi_chunk_finished = False
         self.heading_timestamp = utils.now()
+        # GPIO.setwarnings(False)
+        # GPIO.cleanup()
+        # GPIO.setmode(GPIO.BOARD)
+        # GPIO.setup(GPIO_OVERRIDE_PIN, GPIO.IN)
 
     @property
     def next_node(self):
@@ -289,8 +295,11 @@ class Navigator(object):
 
 
 def cleanup(nav, signum, frame):
-    if nav.cam.is_alive():
+    if nav.cam._popen is not None:
         nav.cam.terminate()
+    if nav.cam._parent_pid == os.getpid():
+        nav.cam.join()
+    sys.exit()
 
 nav = Navigator(logger)
 handler = functools.partial(cleanup, nav)

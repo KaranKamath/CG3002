@@ -7,14 +7,13 @@ from PIL import Image
 
 CAM_RES_WIDTH = 800
 CAM_RES_HEIGHT = 600
-should_terminate = False
 
 
 def camera(queue):
     scanner = zbar.ImageScanner()
     scanner.parse_config('disable')
     scanner.parse_config('upca.enable')
-    # scanner.parse_config('ean13.enable')
+    scanner.parse_config('ean13.enable')
 
     with picamera.PiCamera() as camera:
         camera.resolution = (CAM_RES_WIDTH, CAM_RES_HEIGHT)
@@ -28,8 +27,9 @@ def camera(queue):
             image = Image.open(stream).convert('L')
             z_image = zbar.Image(image.size[0], image.size[1],
                                  'Y800', image.tobytes())
+            print "Scanning..."
             scanner.scan(z_image)
             for symbol in z_image:
-                print symbol.data
+                print symbol.data, symbol.type
             stream.seek(0)
             stream.truncate()
