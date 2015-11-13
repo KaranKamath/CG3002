@@ -259,33 +259,31 @@ class Navigator(object):
     def _wait_for_steps(self, num_of_steps_to_wait):
         self.log.info("Waiting for steps...")
         self._clear_camera_queue()
-        counted_steps = 0
         timestamp = utils.now()
-        node_reached = False
-        while not node_reached:
+        while num_of_steps_to_wait > 0:
             data = self.db.fetch_data(sid=FOOT_SENSOR_ID, since=timestamp)
             timestamp = data[-1][0]
             for data_pt in [x[2] for x in data]:
                 if self.sc.detect_step(data_pt) and \
                         GPIO.input(GPIO_OVERRIDE_PIN):
-                    counted_steps += 2
-                    steps_to_go = num_of_steps_to_wait - counted_steps
-                    self.log.info("Step to go: %d", steps_to_go)
-                    if steps_to_go < 6:
-                        self.audio.prompt_step(steps_to_go)
+                    num_of_steps_to_wait -= 2
+                    self.log.info("Step to go: %d", num_of_steps_to_wait)
+                    if num_of_steps_to_wait < 6:
+                        self.audio.prompt_step(num_of_steps_to_wait)
                     else:
-                        self.audio.prompt_step()
-                if counted_steps >= num_of_steps_to_wait:
-                    node_reached = True
+                        self.audio.prompt_step() 
+                if num_of_steps_to_wait <= 0:
                     break
-                try:
-                    node_id = QUEUE.get_nowait()
+            try:
+                node_id = QUEUE.get_nowait()
+                if str(node_id) in self.path:
                     self.log.info('Captured node %s', node_id)
-                    if str(node_id) == str(self.next_node_id):
-                        counted_steps = num_of_steps_to_wait - 2
-                        self.audio.prompt_camera()
-                except Empty:
-                    continue
+                    self.log.info('Resetting steps to 2')
+                    num_of_steps_to_wait = 2
+                    self.next_node_idx = self.path.index(str(node_id))
+                    self.audio.prompt_camera()
+            except Empty:
+                continue
         self.log.info("Completed steps")
 
     def _clear_camera_queue(self):
