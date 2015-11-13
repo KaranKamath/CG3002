@@ -8,7 +8,8 @@ import functools
 
 from collections import deque
 from multiprocessing import Process, Queue
-# import RPi.GPIO as GPIO
+from Queue import Empty
+import RPi.GPIO as GPIO
 
 from db import DB
 from maps_repo import MapsRepo
@@ -30,7 +31,7 @@ STEP_LENGTH = 40.0
 ANGLE_THRESHOLD = 10
 FOOT_SENSOR_ID = 0
 BACK_SENSOR_ID = 1
-GPIO_OVERRIDE_PIN = 16
+GPIO_OVERRIDE_PIN = 17
 QUEUE = Queue()
 
 
@@ -48,10 +49,10 @@ class Navigator(object):
         self.current_prompt = None
         self.navi_chunk_finished = False
         self.heading_timestamp = utils.now()
-        # GPIO.setwarnings(False)
-        # GPIO.cleanup()
-        # GPIO.setmode(GPIO.BOARD)
-        # GPIO.setup(GPIO_OVERRIDE_PIN, GPIO.IN)
+        GPIO.setwarnings(False)
+        GPIO.cleanup()
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(GPIO_OVERRIDE_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     @property
     def next_node(self):
@@ -257,19 +258,41 @@ class Navigator(object):
 
     def _wait_for_steps(self, num_of_steps_to_wait):
         self.log.info("Waiting for steps...")
+        self._clear_camera_queue()
         counted_steps = 0
         timestamp = utils.now()
         while counted_steps < num_of_steps_to_wait:
             data = self.db.fetch_data(sid=FOOT_SENSOR_ID, since=timestamp)
             timestamp = data[-1][0]
             for data_pt in [x[2] for x in data]:
-                if self.sc.detect_step(data_pt):
+                self.log.info(GPIO.input(GPIO_OVERRIDE_PIN))
+                if self.sc.detect_step(data_pt) and \
+                        GPIO.input(GPIO_OVERRIDE_PIN):
                     counted_steps += 2
-                    self.log.info("Counted steps: %d", counted_steps)
-                    self.audio.prompt_step()
+                    steps_to_go = num_of_steps_to_wait - counted_steps
+                    self.log.info("Step to go: %d", steps_to_go)
+                    if steps_to_go < 6:
+                        self.audio.prompt_step(steps_to_go)
+                    else:
+                        self.audio.prompt_step()
                 if counted_steps >= num_of_steps_to_wait:
                     break
+                try:
+                    node_id = QUEUE.get(False)
+                    QUEUE.task_done()
+                    self.log.info('Captured node %d', node_id)
+                    self.audio.prompt_door()
+                except Empty:
+                    continue
         self.log.info("Completed steps")
+
+    def _clear_camera_queue(self):
+        while not QUEUE.empty():
+            try:
+                QUEUE.get(False)
+                QUEUE.task_done()
+            except Empty:
+                continue
 
     def _node_reached(self):
         self.current_prompt = None
@@ -277,7 +300,12 @@ class Navigator(object):
         self.log.info('Reached node %s', self.next_node_id)
         if self.next_node['name'] == 'Stairwell':
             self.audio.prompt_stairs()
+        elif self.next_node['name'].lower().find('door') != -1:
+            self.audio.prompt_door()
         self.next_node_idx += 1
+        if self.next_node['name'].lower().find('office') != -1 or \
+                self.next_node['name'].lower().find('room'):
+            self.audio.prompt_door()
         if self.next_node_idx == len(self.path):
             self.navi_chunk_finished = True
             self.log.info('Reached destination node')

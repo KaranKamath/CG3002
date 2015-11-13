@@ -20,6 +20,7 @@ DIGITS = [get_audio_path(str(n) + '.wav') for n in range(10)]
 NODE_REACHED = get_audio_path('node_reached.wav')
 STAIRS = get_audio_path('stairs.wav')
 STEP = get_audio_path('step.wav')
+DOOR = get_audio_path('door.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
 BEGIN = get_audio_path('begin.wav')
 PLAYER = 'afplay' if _platform == 'darwin' else 'play'
@@ -59,8 +60,11 @@ class AudioDriver(object):
                 args.append(DIGITS[int(digit)])
             self._play(args)
 
-    def prompt_step(self):
-        self._play([PLAYER, STEP])
+    def prompt_step(self, val=None):
+        if val is None:
+            self._play([PLAYER, STEP])
+        else:
+            self._play([PLAYER, DIGITS[val]])
 
     def prompt_node_reached(self, node_id):
         args = [PLAYER, NODE_REACHED]
@@ -70,6 +74,9 @@ class AudioDriver(object):
 
     def prompt_stairs(self):
         self._play([PLAYER, STAIRS], async=False)
+
+    def prompt_door(self):
+        self._play([PLAYER, DOOR], async=False)
 
     def prompt_enter_info(self):
         self._play([PLAYER, ENTER_INFO], async=False)
@@ -81,5 +88,8 @@ if __name__ == '__main__':
     obj = AudioDriver()
     obj.prompt(PromptDirn.left, 1.234)
     obj.prompt(PromptDirn.end)
+    obj.prompt_step()
+    obj.prompt_step(1)
+    obj.prompt_door()
     obj.prompt(PromptDirn.straight, 12)
     obj.prompt_node_reached(1)
