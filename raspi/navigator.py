@@ -39,7 +39,7 @@ class Navigator(object):
     def __init__(self, logger):
         self.log = logger
         self.log.info('Starting navigator...')
-        self.db = DB(logger=logger, db_name='uart.db')
+        self.db = DB(logger=logger)
         self.maps = MapsRepo()
         self.audio = AudioDriver()
         self.sc = StepCounter(logger)
@@ -232,9 +232,13 @@ class Navigator(object):
         turned_angle = 0
         while abs(turned_angle - angle_to_turn) > ANGLE_THRESHOLD:
             user_heading = self._get_user_heading()
+            if angle_to_turn > 0 and user_heading < initial_heading:
+                user_heading += 360
+            elif angle_to_turn < 0 and user_heading > initial_heading:
+                user_heading -= 360
             turned_angle = user_heading - initial_heading
             self.log.info("Angle turned: %d (= %d - %d)", turned_angle,
-                          initial_heading, user_heading)
+                          user_heading, initial_heading)
         self.log.info("Turn complete")
 
     def _wait_for_steps_to_next_node(self):
@@ -278,7 +282,7 @@ class Navigator(object):
             self.navi_chunk_finished = True
             self.log.info('Reached destination node')
         else:
-            self.log.info('Navigating to node #%d %s',
+            self.log.info('Navigating to node #%s %s',
                           self.next_node_id, self.next_node['name'])
 
     def start(self):
