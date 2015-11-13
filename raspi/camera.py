@@ -1,6 +1,5 @@
 import io
 import time
-from random import randint
 
 import picamera
 import zbar
@@ -45,24 +44,18 @@ def camera(queue):
         camera.start_preview()
         time.sleep(2)
         stream = io.BytesIO()
-        counter = 0
         for x in camera.capture_continuous(stream, format="jpeg",
                                            use_video_port=True):
             stream.seek(0)
-            foo = randint(0, 1)
-
-            if foo:
-                Image.open(stream).save('/home/pi/cg3002/images/image-' + str(counter) + '.jpg', 'w')
-                stream.seek(0)
-
             image = Image.open(stream).convert('L')
             z_image = zbar.Image(image.size[0], image.size[1],
                                  'Y800', image.tobytes())
-            print "Scanning..."
             scanner.scan(z_image)
             for symbol in z_image:
-                if symbol.type == "UPCE":
+                print symbol.data
+                if str(symbol.type) == "UPCE":
                     node_id = decode(symbol.data.strip())
+                    print node_id
                     if node_id:
                         queue.put(node_id)
             stream.seek(0)

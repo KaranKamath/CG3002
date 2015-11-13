@@ -24,7 +24,7 @@ DOOR = get_audio_path('door.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
 BEGIN = get_audio_path('begin.wav')
 PLAYER = 'afplay' if _platform == 'darwin' else 'play'
-SPEED_ARGS = ['-r', '1.3'] if _platform == 'darwin' else ['tempo', '1.3']
+SPEED_ARGS = ['-r', '1.4'] if _platform == 'darwin' else ['tempo', '1.4']
 
 
 class AudioDriver(object):

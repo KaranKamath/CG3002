@@ -261,11 +261,11 @@ class Navigator(object):
         self._clear_camera_queue()
         counted_steps = 0
         timestamp = utils.now()
-        while counted_steps < num_of_steps_to_wait:
+        node_reached = False
+        while not node_reached:
             data = self.db.fetch_data(sid=FOOT_SENSOR_ID, since=timestamp)
             timestamp = data[-1][0]
             for data_pt in [x[2] for x in data]:
-                self.log.info(GPIO.input(GPIO_OVERRIDE_PIN))
                 if self.sc.detect_step(data_pt) and \
                         GPIO.input(GPIO_OVERRIDE_PIN):
                     counted_steps += 2
@@ -276,12 +276,13 @@ class Navigator(object):
                     else:
                         self.audio.prompt_step()
                 if counted_steps >= num_of_steps_to_wait:
+                    node_reached = True
                     break
                 try:
-                    node_id = QUEUE.get(False)
-                    QUEUE.task_done()
-                    self.log.info('Captured node %d', node_id)
-                    self.audio.prompt_door()
+                    node_id = QUEUE.get_nowait()
+                    self.log.info('Captured node %s', node_id)
+                    if node_id == self.next_node_id:
+                        node_reached = True
                 except Empty:
                     continue
         self.log.info("Completed steps")
@@ -289,8 +290,7 @@ class Navigator(object):
     def _clear_camera_queue(self):
         while not QUEUE.empty():
             try:
-                QUEUE.get(False)
-                QUEUE.task_done()
+                QUEUE.get_nowait()
             except Empty:
                 continue
 
@@ -303,13 +303,13 @@ class Navigator(object):
         elif self.next_node['name'].lower().find('door') != -1:
             self.audio.prompt_door()
         self.next_node_idx += 1
-        if self.next_node['name'].lower().find('office') != -1 or \
-                self.next_node['name'].lower().find('room'):
-            self.audio.prompt_door()
         if self.next_node_idx == len(self.path):
             self.navi_chunk_finished = True
             self.log.info('Reached destination node')
         else:
+            if self.next_node['name'].lower().find('office') != -1 or \
+                    self.next_node['name'].lower().find('room') != -1:
+                self.audio.prompt_door()
             self.log.info('Navigating to node #%s %s',
                           self.next_node_id, self.next_node['name'])
 
