@@ -281,8 +281,9 @@ class Navigator(object):
                 try:
                     node_id = QUEUE.get_nowait()
                     self.log.info('Captured node %s', node_id)
-                    if node_id == self.next_node_id:
+                    if str(node_id) == str(self.next_node_id):
                         node_reached = True
+                        self.audio.prompt_camera()
                 except Empty:
                     continue
         self.log.info("Completed steps")

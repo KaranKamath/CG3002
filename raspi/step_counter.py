@@ -2,7 +2,7 @@ import logging
 from enum import Enum
 
 STEP_LENGTH = 40
-STEP_THRESHOLD = 5000
+STEP_THRESHOLD = 4000
 
 
 class StepCounterState(Enum):

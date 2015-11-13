@@ -52,7 +52,6 @@ def camera(queue):
                                  'Y800', image.tobytes())
             scanner.scan(z_image)
             for symbol in z_image:
-                print symbol.data
                 if str(symbol.type) == "UPCE":
                     node_id = decode(symbol.data.strip())
                     print node_id

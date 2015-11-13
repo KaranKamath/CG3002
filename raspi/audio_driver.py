@@ -21,10 +21,12 @@ NODE_REACHED = get_audio_path('node_reached.wav')
 STAIRS = get_audio_path('stairs.wav')
 STEP = get_audio_path('step.wav')
 DOOR = get_audio_path('door.wav')
+CAMERA = get_audio_path('camera.wav')
 ENTER_INFO = get_audio_path('enter_info.wav')
 BEGIN = get_audio_path('begin.wav')
 PLAYER = 'afplay' if _platform == 'darwin' else 'play'
-SPEED_ARGS = ['-r', '1.4'] if _platform == 'darwin' else ['tempo', '1.4']
+SPEED_ARGS = ['-r', '1.5'] if _platform == 'darwin' else ['tempo', '1.5']
+VOL_ARGS = ['-v', '0.7']
 
 
 class AudioDriver(object):
@@ -35,6 +37,7 @@ class AudioDriver(object):
     def _play(self, args, async=False):
         if self.process:
             self.process.kill()
+        args = args[:1] + VOL_ARGS + args[1:]
         with open(os.devnull, 'w') as null:
             if _platform == 'darwin':
                 for arg in args[1:]:
@@ -72,6 +75,9 @@ class AudioDriver(object):
             args.append(DIGITS[int(digit)])
         self._play(args, async=False)
 
+    def prompt_camera(self):
+        self._play([PLAYER, CAMERA], async=False)
+
     def prompt_stairs(self):
         self._play([PLAYER, STAIRS], async=False)
 
@@ -93,3 +99,4 @@ if __name__ == '__main__':
     obj.prompt_door()
     obj.prompt(PromptDirn.straight, 12)
     obj.prompt_node_reached(1)
+    obj.prompt_node_reached(10, is_camera=True)
