@@ -49,10 +49,12 @@ def camera(queue):
         for x in camera.capture_continuous(stream, format="jpeg",
                                            use_video_port=True):
             stream.seek(0)
-            # foo = randint(0, 1)
-            # if foo:
-            #     open('/home/pi/cg3002/images/image-' + str(counter) + '.jpg', 'w').write(stream)
-            # stream.seek(0)
+            foo = randint(0, 1)
+
+            if foo:
+                Image.open(stream).save('/home/pi/cg3002/images/image-' + str(counter) + '.jpg', 'w')
+                stream.seek(0)
+
             image = Image.open(stream).convert('L')
             z_image = zbar.Image(image.size[0], image.size[1],
                                  'Y800', image.tobytes())
